@@ -9,11 +9,14 @@ class PaymentCode
 
     // Callback Status Codes
     public const CALLBACK_SUCCESS = '00';
+
     public const CALLBACK_FAILED = '02';
 
     // Redirect Status Codes
     public const REDIRECT_SUCCESS = '00';
+
     public const REDIRECT_PROCESS = '01'; // Transaction pending
+
     public const REDIRECT_CANCELED = '02'; // Canceled or Failed
 
     /**
