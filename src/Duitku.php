@@ -24,6 +24,12 @@ class Duitku
         $this->client = new Client($config);
     }
 
+    public function disbursement(): Disbursement
+    {
+        return new Disbursement($this->config);
+    }
+
+
     /**
      * Get Payment Methods
      * Direct API call without internal caching to allow developer flexibility.

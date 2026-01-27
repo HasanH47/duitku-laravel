@@ -40,4 +40,15 @@ return [
     |
     */
     'default_expiry' => env('DUITKU_DEFAULT_EXPIRY', 60),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Duitku Disbursement Config
+    |--------------------------------------------------------------------------
+    |
+    | Required for Disbursement (Transfer Online) features.
+    |
+    */
+    'user_id' => env('DUITKU_USER_ID', ''),
+    'email' => env('DUITKU_EMAIL', ''),
 ];

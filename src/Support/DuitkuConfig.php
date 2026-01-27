@@ -30,4 +30,14 @@ class DuitkuConfig
     {
         return (int) ($this->config['default_expiry'] ?? 60);
     }
+
+    public function getUserId(): string
+    {
+        return (string) ($this->config['user_id'] ?? '');
+    }
+
+    public function getEmail(): string
+    {
+        return (string) ($this->config['email'] ?? '');
+    }
 }

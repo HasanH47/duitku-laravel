@@ -94,6 +94,44 @@ foreach ($statuses as $status) {
 }
 ```
 
+### 4. Disbursement (Transfer Online)
+
+To use Disbursement features, add `DUITKU_USER_ID` and `DUITKU_EMAIL` to your `.env` file.
+
+**Step 1: Bank Inquiry (Check Account)**
+First, check the destination account validity.
+
+```php
+use Duitku\Laravel\Facades\Duitku;
+use Duitku\Laravel\Data\DisbursementInfo;
+
+$info = new DisbursementInfo(
+    amountTransfer: 50000,
+    bankAccount: '1234567890',
+    bankCode: '014', // BCA
+    purpose: 'Withdrawal'
+);
+
+$inquiry = Duitku::disbursement()->bankInquiry($info);
+
+echo $inquiry->accountName; // "JOHN DOE"
+echo $inquiry->disburseId; // Keep this ID for step 2!
+```
+
+**Step 2: Execute Transfer**
+After confirming the account name, execute the transfer using the `disburseId` from step 1.
+
+```php
+$transfer = Duitku::disbursement()->transfer(
+    disburseId: $inquiry->disburseId,
+    info: $info,
+    accountName: $inquiry->accountName,
+    custRefNumber: $inquiry->custRefNumber
+);
+
+echo $transfer->responseCode; // 00 = Success
+```
+
 ## Testing
 
 Run the tests:
