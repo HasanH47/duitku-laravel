@@ -29,7 +29,6 @@ class Duitku
         return new Disbursement($this->config);
     }
 
-
     /**
      * Get Payment Methods
      * Direct API call without internal caching to allow developer flexibility.

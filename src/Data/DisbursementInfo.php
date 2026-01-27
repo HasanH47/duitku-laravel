@@ -11,6 +11,7 @@ class DisbursementInfo
         public string $purpose,
         public ?string $senderId = null,
         public ?string $senderName = null,
+        public ?string $type = null, // RTGS, LLG, BIFAST, H2H
     ) {}
 
     public function toArray(): array
@@ -22,6 +23,7 @@ class DisbursementInfo
             'purpose' => $this->purpose,
             'senderId' => $this->senderId,
             'senderName' => $this->senderName,
-        ], fn($value) => !is_null($value));
+            'type' => $this->type,
+        ], fn ($value) => ! is_null($value));
     }
 }

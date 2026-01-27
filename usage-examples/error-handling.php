@@ -10,17 +10,16 @@ use Illuminate\Http\Client\RequestException;
  * Since we use Laravel's Http Client, all non-2xx responses
  * will throw an Illuminate\Http\Client\RequestException.
  */
-
 try {
     // Example: Bad Request (Invalid credentials or parameters)
     $response = Duitku::checkout(new PaymentRequest(
-         amount: 10000,
-         merchantOrderId: 'INV-INVALID',
-         productDetails: 'Test',
-         email: 'invalid-email', // This might trigger 400
-         phoneNumber: '08123',
-         callbackUrl: 'https://example.com',
-         returnUrl: 'https://example.com'
+        amount: 10000,
+        merchantOrderId: 'INV-INVALID',
+        productDetails: 'Test',
+        email: 'invalid-email', // This might trigger 400
+        phoneNumber: '08123',
+        callbackUrl: 'https://example.com',
+        returnUrl: 'https://example.com'
     ));
 
 } catch (RequestException $e) {
@@ -34,11 +33,11 @@ try {
 
     if ($statusCode === 400) {
         // Handle Validation Error
-        echo "Validasi Gagal: " . $serverMessage;
+        echo 'Validasi Gagal: '.$serverMessage;
     } elseif ($statusCode === 401) {
         // Handle Wrong Signature
-        echo "Masalah Config/Signature: " . $serverMessage;
+        echo 'Masalah Config/Signature: '.$serverMessage;
     } else {
-        echo "Error Lain ($statusCode): " . $serverMessage;
+        echo "Error Lain ($statusCode): ".$serverMessage;
     }
 }

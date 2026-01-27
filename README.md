@@ -132,6 +132,77 @@ $transfer = Duitku::disbursement()->transfer(
 echo $transfer->responseCode; // 00 = Success
 ```
 
+### 5. Clearing (BIFAST / RTGS / LLG)
+
+For higher amounts or specific transfer types, use Clearing methods.
+
+```php
+$info = new DisbursementInfo(
+    amountTransfer: 50000000,
+    bankAccount: '1234567890',
+    bankCode: '014',
+    purpose: 'Big Transfer',
+    type: 'BIFAST' // or 'RTGS', 'LLG'
+);
+
+// 1. Inquiry
+$inquiry = Duitku::disbursement()->clearing()->inquiry($info);
+
+// 2. Transfer
+$transfer = Duitku::disbursement()->clearing()->execute(
+    disburseId: $inquiry->disburseId,
+    info: $info,
+    accountName: $inquiry->accountName,
+    custRefNumber: $inquiry->custRefNumber
+);
+```
+
+### 6. Cash Out (Indomaret / Pos Indonesia)
+
+Withdraw funds via retail outlets.
+
+```php
+use Duitku\Laravel\Data\CashOutInfo;
+
+$info = new CashOutInfo(
+    amountTransfer: 50000,
+    bankCode: '2010', // 2010 = Indomaret, 2011 = Pos
+    accountName: 'John Doe',
+    accountIdentity: '350...', // No KTP
+    phoneNumber: '08123...'
+);
+
+$response = Duitku::disbursement()->cashOut()->inquiry($info);
+
+echo $response->token; // Token used for withdrawal
+```
+
+### 7. Finance Features (Status, Balance, List Bank)
+
+You can check transaction status, account balance, and list available banks.
+
+```php
+use Duitku\Laravel\Support\DisbursementCode;
+
+// Check Disbursement Status
+$status = Duitku::disbursement()->finance()->status('DISB-1001');
+
+if ($status->responseCode === DisbursementCode::SUCCESS) {
+    echo "Transaction Successful!";
+}
+
+// Check Balance
+$balance = Duitku::disbursement()->finance()->balance();
+echo "Saldo: " . number_format($balance->balance);
+echo "Efektif: " . number_format($balance->effectiveBalance);
+
+// List Available Banks
+$banks = Duitku::disbursement()->finance()->listBank();
+foreach ($banks as $bank) {
+    echo $bank['bankName'] . ' (' . $bank['bankCode'] . ')';
+}
+```
+
 ## Testing
 
 Run the tests:
