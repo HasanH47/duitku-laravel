@@ -8,7 +8,7 @@ it('can check multiple transaction statuses concurrently', function () {
     Http::fake([
         '*/webapi/api/merchant/transactionStatus' => Http::sequence()
             ->push(['merchantOrderId' => 'ORD-1', 'statusCode' => '00', 'statusMessage' => 'Success', 'amount' => '10000', 'reference' => 'REF1'])
-            ->push(['merchantOrderId' => 'ORD-2', 'statusCode' => '01', 'statusMessage' => 'Pending', 'amount' => '20000', 'reference' => 'REF2'])
+            ->push(['merchantOrderId' => 'ORD-2', 'statusCode' => '01', 'statusMessage' => 'Pending', 'amount' => '20000', 'reference' => 'REF2']),
     ]);
 
     // Act

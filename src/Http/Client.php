@@ -30,6 +30,6 @@ class Client
 
     public function getUrl(string $path): string
     {
-        return $this->baseUrl . '/' . ltrim($path, '/');
+        return $this->baseUrl.'/'.ltrim($path, '/');
     }
 }

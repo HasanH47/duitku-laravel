@@ -10,7 +10,6 @@ use Duitku\Laravel\Data\TransactionStatus;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Support\DuitkuConfig;
 use Illuminate\Http\Client\Pool;
-
 use Illuminate\Support\Facades\Http;
 
 class Duitku
@@ -33,15 +32,15 @@ class Duitku
     {
         $datetime = date('Y-m-d H:i:s');
         $signature = $this->generateSignature(
-            $this->config->getMerchantCode() . $amount . $datetime . $this->config->getApiKey(),
+            $this->config->getMerchantCode().$amount.$datetime.$this->config->getApiKey(),
             'sha256'
         );
 
         $response = $this->client->request()->post('/webapi/api/merchant/paymentmethod/getpaymentmethod', [
             'merchantCode' => $this->config->getMerchantCode(),
-            'amount'       => $amount,
-            'datetime'     => $datetime,
-            'signature'    => $signature,
+            'amount' => $amount,
+            'datetime' => $datetime,
+            'signature' => $signature,
         ]);
 
         return $response->json('paymentFee') ?? [];
@@ -53,12 +52,12 @@ class Duitku
     public function checkout(PaymentRequest $request): PaymentResponse
     {
         $signature = $this->generateSignature(
-            $this->config->getMerchantCode() . $request->merchantOrderId . $request->amount . $this->config->getApiKey()
+            $this->config->getMerchantCode().$request->merchantOrderId.$request->amount.$this->config->getApiKey()
         );
 
         $payload = array_merge($request->toArray(), [
             'merchantCode' => $this->config->getMerchantCode(),
-            'signature'    => $signature,
+            'signature' => $signature,
         ]);
 
         $response = $this->client->request()->post('/webapi/api/merchant/v2/inquiry', $payload);
@@ -72,13 +71,13 @@ class Duitku
     public function checkStatus(string $merchantOrderId): TransactionStatus
     {
         $signature = $this->generateSignature(
-            $this->config->getMerchantCode() . $merchantOrderId . $this->config->getApiKey()
+            $this->config->getMerchantCode().$merchantOrderId.$this->config->getApiKey()
         );
 
         $response = $this->client->request()->post('/webapi/api/merchant/transactionStatus', [
-            'merchantCode'    => $this->config->getMerchantCode(),
+            'merchantCode' => $this->config->getMerchantCode(),
             'merchantOrderId' => $merchantOrderId,
-            'signature'       => $signature,
+            'signature' => $signature,
         ]);
 
         return TransactionStatus::fromArray($response->json());
@@ -94,17 +93,18 @@ class Duitku
             $requests = [];
             foreach ($merchantOrderIds as $orderId) {
                 $signature = $this->generateSignature(
-                    $this->config->getMerchantCode() . $orderId . $this->config->getApiKey()
+                    $this->config->getMerchantCode().$orderId.$this->config->getApiKey()
                 );
 
                 $url = $this->client->getUrl('/webapi/api/merchant/transactionStatus');
 
                 $requests[] = $pool->post($url, [
-                    'merchantCode'    => $this->config->getMerchantCode(),
+                    'merchantCode' => $this->config->getMerchantCode(),
                     'merchantOrderId' => $orderId,
-                    'signature'       => $signature,
+                    'signature' => $signature,
                 ]);
             }
+
             return $requests;
         });
 
@@ -112,6 +112,7 @@ class Duitku
             if ($response instanceof \Exception) {
                 return null; // Handle failed requests gracefully
             }
+
             return TransactionStatus::fromArray($response->json());
         }, $responses);
     }
@@ -124,7 +125,7 @@ class Duitku
         $callback = CallbackRequest::fromArray($data);
 
         $generatedSignature = $this->generateSignature(
-            $this->config->getMerchantCode() . $callback->amount . $callback->merchantOrderId . $this->config->getApiKey()
+            $this->config->getMerchantCode().$callback->amount.$callback->merchantOrderId.$this->config->getApiKey()
         );
 
         return $generatedSignature === $callback->signature;

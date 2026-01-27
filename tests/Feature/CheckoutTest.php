@@ -12,8 +12,8 @@ it('can create a payment invoice', function () {
             'reference' => 'REF123',
             'paymentUrl' => 'https://sandbox.duitku.com/payment/xyz',
             'statusCode' => '00',
-            'statusMessage' => 'Success'
-        ], 200)
+            'statusMessage' => 'Success',
+        ], 200),
     ]);
 
     $request = new PaymentRequest(

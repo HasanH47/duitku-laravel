@@ -1,6 +1,5 @@
 <?php
 
-use Duitku\Laravel\Data\CallbackRequest;
 use Duitku\Laravel\Facades\Duitku;
 
 it('can validate callback signature', function () {
@@ -11,14 +10,14 @@ it('can validate callback signature', function () {
     $orderId = 'ORDER-SUCCESS';
 
     // Generate valid signature
-    $signature = md5($merchantCode . $amount . $orderId . $apiKey);
+    $signature = md5($merchantCode.$amount.$orderId.$apiKey);
 
     $payload = [
         'merchantCode' => $merchantCode,
         'amount' => $amount,
         'merchantOrderId' => $orderId,
         'signature' => $signature,
-        'resultCode' => '00'
+        'resultCode' => '00',
     ];
 
     // Act
@@ -34,7 +33,7 @@ it('rejects invalid callback signature', function () {
         'amount' => 10000,
         'merchantOrderId' => 'ORDER-FAKE',
         'signature' => 'invalid_signature',
-        'resultCode' => '00'
+        'resultCode' => '00',
     ];
 
     $isValid = Duitku::validateCallback($payload);

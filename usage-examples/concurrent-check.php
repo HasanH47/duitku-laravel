@@ -1,13 +1,11 @@
 <?php
 
 use Duitku\Laravel\Facades\Duitku;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Example: Concurrent Status Checks using Laravel Http::pool
  * This is significantly faster for bulk checks.
  */
-
 $orderIds = ['ORD-001', 'ORD-002', 'ORD-003', 'ORD-004', 'ORD-005'];
 
 $startTime = microtime(true);
@@ -26,4 +24,4 @@ foreach ($statuses as $status) {
     }
 }
 
-echo "Total Time (Concurrent): " . number_format($duration, 4) . " seconds\n";
+echo 'Total Time (Concurrent): '.number_format($duration, 4)." seconds\n";

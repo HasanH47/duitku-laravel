@@ -3,8 +3,8 @@
 namespace Duitku\Laravel;
 
 use Duitku\Laravel\Support\DuitkuConfig;
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Support\DeferrableProvider;
+use Illuminate\Support\ServiceProvider;
 
 class DuitkuServiceProvider extends ServiceProvider implements DeferrableProvider
 {
@@ -15,7 +15,7 @@ class DuitkuServiceProvider extends ServiceProvider implements DeferrableProvide
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/duitku.php' => config_path('duitku.php'),
+                __DIR__.'/../config/duitku.php' => config_path('duitku.php'),
             ], 'duitku-config');
         }
     }
@@ -26,7 +26,7 @@ class DuitkuServiceProvider extends ServiceProvider implements DeferrableProvide
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/duitku.php', 'duitku'
+            __DIR__.'/../config/duitku.php', 'duitku'
         );
 
         $this->app->singleton(DuitkuConfig::class, function ($app) {

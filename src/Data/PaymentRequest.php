@@ -22,18 +22,18 @@ class PaymentRequest
     public function toArray(): array
     {
         return array_filter([
-            'paymentAmount'     => $this->amount,
-            'merchantOrderId'   => $this->merchantOrderId,
-            'productDetails'    => $this->productDetails,
-            'email'             => $this->email,
-            'paymentMethod'     => $this->paymentMethod,
-            'customerVaName'    => $this->customerVaName,
-            'phoneNumber'       => $this->phoneNumber,
-            'itemDetails'       => $this->itemDetails,
-            'customerDetail'    => $this->customerDetail,
-            'callbackUrl'       => $this->callbackUrl,
-            'returnUrl'         => $this->returnUrl,
-            'expiryPeriod'      => $this->expiryPeriod,
-        ], fn($value) => !is_null($value));
+            'paymentAmount' => $this->amount,
+            'merchantOrderId' => $this->merchantOrderId,
+            'productDetails' => $this->productDetails,
+            'email' => $this->email,
+            'paymentMethod' => $this->paymentMethod,
+            'customerVaName' => $this->customerVaName,
+            'phoneNumber' => $this->phoneNumber,
+            'itemDetails' => $this->itemDetails,
+            'customerDetail' => $this->customerDetail,
+            'callbackUrl' => $this->callbackUrl,
+            'returnUrl' => $this->returnUrl,
+            'expiryPeriod' => $this->expiryPeriod,
+        ], fn ($value) => ! is_null($value));
     }
 }
