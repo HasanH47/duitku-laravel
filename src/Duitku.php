@@ -62,6 +62,10 @@ class Duitku
 
         $response = $this->client->request()->post('/webapi/api/merchant/v2/inquiry', $payload);
 
+        if (!$response->successful()) {
+            $response->throw();
+        }
+
         return PaymentResponse::fromArray($response->json());
     }
 
@@ -79,6 +83,10 @@ class Duitku
             'merchantOrderId' => $merchantOrderId,
             'signature' => $signature,
         ]);
+
+        if (!$response->successful()) {
+            $response->throw();
+        }
 
         return TransactionStatus::fromArray($response->json());
     }
