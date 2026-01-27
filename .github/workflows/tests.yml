@@ -31,8 +31,12 @@ jobs:
           - laravel: 12.*
             testbench: 10.*
             carbon: ^3.0
-            pest: ^3.0
+            pest: ^4.0
             collision: ^8.1
+          # Override for PHP 8.5 on Laravel 11 to use Pest 4
+          - laravel: 11.*
+            php: 8.5
+            pest: ^4.0
         exclude:
           - laravel: 10.*
             php: 8.4
@@ -59,7 +63,7 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/php.json"
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
-      - name: Remove Larastan (Fix L12 Conflict)
+      - name: Remove Larastan (Fix Conflict)
         run: composer remove --dev larastan/larastan --no-interaction --no-update
 
       - name: Install dependencies
