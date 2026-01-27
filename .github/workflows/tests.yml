@@ -21,12 +21,18 @@ jobs:
           - laravel: 10.*
             testbench: 8.*
             carbon: ^2.63
+            pest: ^2.0
+            collision: ^7.0
           - laravel: 11.*
             testbench: 9.*
             carbon: ^3.0
+            pest: ^3.0
+            collision: ^8.1
           - laravel: 12.*
             testbench: 10.*
             carbon: ^3.0
+            pest: ^3.0
+            collision: ^8.1
         exclude:
           - laravel: 10.*
             php: 8.4
@@ -53,9 +59,12 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/php.json"
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
+      - name: Remove Larastan (Fix L12 Conflict)
+        run: composer remove --dev larastan/larastan --no-interaction --no-update
+
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "nesbot/carbon:${{ matrix.carbon }}" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "nesbot/carbon:${{ matrix.carbon }}" "pestphp/pest:${{ matrix.pest }}" "nunomaduro/collision:${{ matrix.collision }}" --no-interaction --no-update
           composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction
 
       - name: Execute tests
