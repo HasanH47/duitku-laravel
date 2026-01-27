@@ -78,7 +78,9 @@ public function handleCallback(Request $request)
     $orderId = $request->merchantOrderId;
     $status = $request->resultCode; // '00' = Sukses
 
-    if ($status === '00') {
+    use Duitku\Laravel\Support\PaymentCode;
+
+    if ($status === PaymentCode::SUCCESS) {
         // Update database: Order Telah Dibayar
     }
 }
@@ -102,7 +104,58 @@ foreach ($statuses as $status) {
 }
 ```
 
-### 4. Disbursement (Transfer Dana / Payout)
+### 4. Duitku POP (Popup / Snap Integration) ⚡
+
+Metode integrasi menggunakan popup (tidak redirect halaman). Sangat cocok untuk pengalaman pengguna yang lebih mulus.
+
+**Langkah 1: Backend (Dapatkan Reference)**
+
+```php
+use Duitku\Laravel\Support\PaymentCode;
+
+$request = new PaymentRequest(
+    amount: 10000,
+    merchantOrderId: 'INV-001',
+    productDetails: 'Test Item',
+    email: 'customer@example.com'
+);
+
+$response = Duitku::pop()->createTransaction($request);
+
+echo $response->reference; // Gunakan ini di frontend JS
+```
+
+**Langkah 2: Frontend (Tampilkan Popup)**
+Muat script Duitku dan panggil fungsi checkout.
+
+```html
+<script src="{{ Duitku::pop()->scriptUrl() }}"></script>
+
+<script type="text/javascript">
+  function bayar() {
+    checkout.process("{{ $response->reference }}", {
+      successEvent: function (result) {
+        // Callback sukses di frontend
+        // result.resultCode = '00'
+        window.location.href = "/success";
+      },
+      pendingEvent: function (result) {
+        // result.resultCode = '01'
+        window.location.href = "/pending";
+      },
+      errorEvent: function (result) {
+        // result.resultCode = '02'
+        window.location.href = "/error";
+      },
+      closeEvent: function (result) {
+        // Saat popup ditutup
+      },
+    });
+  }
+</script>
+```
+
+### 5. Disbursement (Transfer Dana / Payout)
 
 Untuk menggunakan fitur Disbursement, tambahkan `DUITKU_USER_ID` dan `DUITKU_EMAIL` di `.env` terlebih dahulu.
 

@@ -99,6 +99,49 @@ test('clearing inquiry generates correct signature', function () {
         ->and($response->type)->toBe('BIFAST');
 });
 
+test('clearing execute works', function () {
+    Http::fake([
+        '*/webapi/api/disbursement/transferclearingsandbox' => Http::response([
+            'responseCode' => '00',
+            'responseDesc' => 'Success',
+            'disburseId' => 'DISB-CLR-1',
+        ], 200),
+    ]);
+
+    $info = new DisbursementInfo(
+        amountTransfer: 1000000,
+        bankAccount: '1234567890',
+        bankCode: '014',
+        purpose: 'Clearing Test',
+        type: 'BIFAST'
+    );
+
+    $response = Duitku::disbursement()->clearing()->execute(
+        disburseId: 'DISB-CLR-1',
+        info: $info,
+        accountName: 'JOHN DOE',
+        custRefNumber: 'REF-001'
+    );
+
+    expect($response->responseCode)->toBe(DisbursementCode::SUCCESS);
+});
+
+test('clearing validate callback works', function () {
+    $data = [
+        'bankCode' => '014',
+        'bankAccount' => '123',
+        'accountName' => 'JOHN',
+        'custRefNumber' => 'REF',
+        'amountTransfer' => '1000',
+        'disburseId' => 'DSB',
+    ];
+
+    $signature = hash('sha256', 'test@example.com'.'014'.'123'.'JOHN'.'REF'.'1000'.'DSB'.'test-api-key');
+    $data['signature'] = $signature;
+
+    expect(Duitku::disbursement()->clearing()->validateCallback($data))->toBeTrue();
+});
+
 test('cash out inquiry generated correct signature', function () {
     Http::fake([
         '*/api/cashout/inquiry' => Http::response([

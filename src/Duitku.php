@@ -8,6 +8,7 @@ use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Data\PaymentResponse;
 use Duitku\Laravel\Data\TransactionStatus;
 use Duitku\Laravel\Http\Client;
+use Duitku\Laravel\Services\Pop;
 use Duitku\Laravel\Support\DuitkuConfig;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Support\Facades\Http;
@@ -27,6 +28,11 @@ class Duitku
     public function disbursement(): Disbursement
     {
         return new Disbursement($this->config);
+    }
+
+    public function pop(): Pop
+    {
+        return new Pop($this->config);
     }
 
     /**
