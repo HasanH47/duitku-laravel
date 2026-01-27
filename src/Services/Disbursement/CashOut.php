@@ -47,21 +47,11 @@ class CashOut
             ? 'https://disbursement-sandbox.duitku.com/api/cashout/inquiry'
             : 'https://disbursement.duitku.com/api/cashout/inquiry';
 
-        // NOTE: CashOut uses different base URL structure potentially,
-        // but let's stick to full URL override in request since Client might default to webapi.
-        // Actually Client.php might handle baseUrl, but here the subdomain differs (disbursement vs passport).
-
         $response = $this->client->request()->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
-
-        // CashOut response is handled universally by DisbursementResponse if fields match,
-        // or we might need separate response handling if structure differs significantly.
-        // It returns 'token', 'pin'. DisbursementResponse doesn't have these.
-        // Let's rely on flexible parsing or Array return for now, OR update DisbursementResponse.
-        // Ideally update DisbursementResponse to include 'token', 'pin'.
 
         return DisbursementResponse::fromArray($response->json());
     }

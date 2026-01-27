@@ -132,18 +132,6 @@ class Finance
 
         $data = $response->json();
 
-        // Check for error code first (if responseCode exists and is not 00)
-        // Note: The structure of listBank response might be just list or {responseCode, listBank: []}
-        // Docs say keys are: responseCode, responseDesc, bankCode, bankName... which implies a flat list?
-        // Or "listBank" key? Usually API returns { responseCode: "00", listBank: [...] }
-        // Let's assume standard behavior: if 'listBank' key exists, return it.
-        // If not, maybe the root is the list? (Unlikely for XML-to-JSON APIs).
-        // Let's assume it returns 'listBank' array based on common Duitku patterns,
-        // OR it might return a flat JSON array if it's a pure list endpoint (rare).
-        // Wait, the doc lists `responseCode` AND `bankCode` in "Response Parameters".
-        // This usually means it returns a JSON Object where `listBank` (or similar) contains the array.
-        // Let's protect against both.
-
         if (isset($data['listBank']) && is_array($data['listBank'])) {
             return $data['listBank'];
         }
