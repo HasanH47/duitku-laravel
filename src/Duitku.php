@@ -62,7 +62,7 @@ class Duitku
 
         $response = $this->client->request()->post('/webapi/api/merchant/v2/inquiry', $payload);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             $response->throw();
         }
 
@@ -84,7 +84,7 @@ class Duitku
             'signature' => $signature,
         ]);
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             $response->throw();
         }
 
