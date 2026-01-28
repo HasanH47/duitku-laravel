@@ -5,6 +5,7 @@ export default defineConfig({
   title: "Duitku Laravel",
   description: "Duitku Payment Gateway SDK for Laravel",
   base: "/duitku-laravel/",
+  head: [["link", { rel: "icon", href: "/duitku-laravel/favicon.ico" }]],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
