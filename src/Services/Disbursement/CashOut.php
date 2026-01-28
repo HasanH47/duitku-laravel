@@ -2,6 +2,7 @@
 
 namespace Duitku\Laravel\Services\Disbursement;
 
+use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\CashOutInfo;
 use Duitku\Laravel\Data\DisbursementResponse;
 use Duitku\Laravel\Http\Client;
@@ -9,6 +10,8 @@ use Duitku\Laravel\Support\DuitkuConfig;
 
 class CashOut
 {
+    use InteractsWithApi;
+
     protected Client $client;
 
     public function __construct(
@@ -23,10 +26,9 @@ class CashOut
      */
     public function inquiry(CashOutInfo $info): DisbursementResponse
     {
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + amountTransfer + purpose + secretKey)
-        // Note: Docs say "amountTransfer" without decimal. format is strictly int.
         $signatureParams =
             $this->config->getEmail().
             $timestamp.
@@ -34,7 +36,7 @@ class CashOut
             ($info->purpose ?? '').
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = array_merge($info->toArray(), [
             'userId' => (int) $this->config->getUserId(),
@@ -43,11 +45,9 @@ class CashOut
             'signature' => $signature,
         ]);
 
-        $endpoint = $this->config->isSandbox()
-            ? 'https://disbursement-sandbox.duitku.com/api/cashout/inquiry'
-            : 'https://disbursement.duitku.com/api/cashout/inquiry';
+        $endpoint = $this->config->getDisbursementHost().'/api/cashout/inquiry';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->request($this->config->getDisbursementHost())->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
@@ -68,7 +68,7 @@ class CashOut
             ($data['custRefNumber'] ?? '').
             $this->config->getApiKey();
 
-        $generated = hash('sha256', $signatureParam);
+        $generated = $this->generateSignature($signatureParam, 'sha256');
 
         return $generated === ($data['signature'] ?? '');
     }

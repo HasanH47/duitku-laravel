@@ -2,6 +2,7 @@
 
 namespace Duitku\Laravel\Services\Disbursement;
 
+use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\DisbursementInfo;
 use Duitku\Laravel\Data\DisbursementResponse;
 use Duitku\Laravel\Http\Client;
@@ -9,6 +10,8 @@ use Duitku\Laravel\Support\DuitkuConfig;
 
 class Clearing
 {
+    use InteractsWithApi;
+
     protected Client $client;
 
     public function __construct(
@@ -26,7 +29,7 @@ class Clearing
             throw new \InvalidArgumentException('Type (RTGS/LLG/BIFAST) is required for clearing inquiry.');
         }
 
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + bankCode + type + bankAccount + amountTransfer + purpose + secretKey)
         $signatureParams =
@@ -39,7 +42,7 @@ class Clearing
             $info->purpose.
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = array_merge($info->toArray(), [
             'userId' => (int) $this->config->getUserId(),
@@ -70,7 +73,7 @@ class Clearing
             throw new \InvalidArgumentException('Type (RTGS/LLG/BIFAST) is required for clearing transfer.');
         }
 
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + bankCode + type + bankAccount + accountName + custRefNumber + amountTransfer + purpose + disburseId + secretKey)
         $signatureParams =
@@ -86,7 +89,7 @@ class Clearing
             $disburseId.
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = [
             'disburseId' => $disburseId,
@@ -131,7 +134,7 @@ class Clearing
             ($data['disburseId'] ?? '').
             $this->config->getApiKey();
 
-        $generated = hash('sha256', $signatureParam);
+        $generated = $this->generateSignature($signatureParam, 'sha256');
 
         return $generated === ($data['signature'] ?? '');
     }

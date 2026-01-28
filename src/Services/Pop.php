@@ -2,6 +2,7 @@
 
 namespace Duitku\Laravel\Services;
 
+use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Data\PopResponse;
 use Duitku\Laravel\Http\Client;
@@ -9,6 +10,8 @@ use Duitku\Laravel\Support\DuitkuConfig;
 
 class Pop
 {
+    use InteractsWithApi;
+
     protected Client $client;
 
     public function __construct(
@@ -23,20 +26,16 @@ class Pop
      */
     public function createTransaction(PaymentRequest $request): PopResponse
     {
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
         $merchantCode = $this->config->getMerchantCode();
         $apiKey = $this->config->getApiKey();
 
         // Signature for Headers: SHA256(merchantCode + timestamp + apiKey)
-        $signature = hash('sha256', $merchantCode.$timestamp.$apiKey);
+        $signature = $this->generateSignature($merchantCode.$timestamp.$apiKey, 'sha256');
 
-        $baseUrl = $this->config->isSandbox()
-            ? 'https://api-sandbox.duitku.com'
-            : 'https://api-prod.duitku.com';
+        $endpoint = $this->config->getApiHost().'/api/merchant/createInvoice';
 
-        $endpoint = $baseUrl.'/api/merchant/createInvoice';
-
-        $response = $this->client->request()
+        $response = $this->client->request($this->config->getApiHost())
             ->withHeaders([
                 'x-duitku-signature' => $signature,
                 'x-duitku-timestamp' => $timestamp,
@@ -56,8 +55,6 @@ class Pop
      */
     public function scriptUrl(): string
     {
-        return $this->config->isSandbox()
-            ? 'https://app-sandbox.duitku.com/lib/js/duitku.js'
-            : 'https://app-prod.duitku.com/lib/js/duitku.js';
+        return $this->config->getAppHost().'/lib/js/duitku.js';
     }
 }

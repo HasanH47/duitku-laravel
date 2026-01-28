@@ -2,7 +2,7 @@
 
 namespace Duitku\Laravel;
 
-use Duitku\Laravel\Concerns\HasSignatures;
+use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\CallbackRequest;
 use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Data\PaymentResponse;
@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Http;
 
 class Duitku
 {
-    use HasSignatures;
+    use InteractsWithApi;
 
     protected Client $client;
 
@@ -119,7 +119,7 @@ class Duitku
                     $this->config->getMerchantCode().$orderId.$this->config->getApiKey()
                 );
 
-                $url = $this->client->getUrl('/webapi/api/merchant/transactionStatus');
+                $url = $this->config->getPassportHost().'/webapi/api/merchant/transactionStatus';
 
                 $requests[] = $pool->post($url, [
                     'merchantCode' => $this->config->getMerchantCode(),

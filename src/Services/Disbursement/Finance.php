@@ -2,12 +2,15 @@
 
 namespace Duitku\Laravel\Services\Disbursement;
 
+use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\DisbursementResponse;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Support\DuitkuConfig;
 
 class Finance
 {
+    use InteractsWithApi;
+
     protected Client $client;
 
     public function __construct(
@@ -21,7 +24,7 @@ class Finance
      */
     public function status(string $disburseId): DisbursementResponse
     {
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + disburseId + secretKey)
         $signatureParams =
@@ -30,7 +33,7 @@ class Finance
             $disburseId.
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = [
             'disburseId' => $disburseId,
@@ -40,13 +43,7 @@ class Finance
             'signature' => $signature,
         ];
 
-        $endpoint = $this->config->isSandbox()
-            ? '/webapi/api/disbursement/inquirystatus'
-            : '/webapi/api/disbursement/inquirystatus';
-
-        // Note: Production endpoint is 'https://passport.duitku.com/webapi/api/disbursement/inquirystatus'
-        // Sandbox is 'https://sandbox.duitku.com/webapi/api/disbursement/inquirystatus'
-        // Client.php handles the base URL switch correctly.
+        $endpoint = '/webapi/api/disbursement/inquirystatus';
 
         $response = $this->client->request()->post($endpoint, $payload);
 
@@ -62,7 +59,7 @@ class Finance
      */
     public function balance(): DisbursementResponse
     {
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + secretKey)
         $signatureParams =
@@ -70,7 +67,7 @@ class Finance
             $timestamp.
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = [
             'userId' => (int) $this->config->getUserId(),
@@ -79,12 +76,7 @@ class Finance
             'signature' => $signature,
         ];
 
-        $endpoint = $this->config->isSandbox()
-            ? '/webapi/api/disbursement/checkbalance'
-            : '/webapi/api/disbursement/checkbalance'; // Same endpoint
-
-        // Note: Production endpoint is 'https://passport.duitku.com/webapi/api/disbursement/checkbalance'
-        // Sandbox is 'https://sandbox.duitku.com/webapi/api/disbursement/checkbalance'
+        $endpoint = '/webapi/api/disbursement/checkbalance';
 
         $response = $this->client->request()->post($endpoint, $payload);
 
@@ -103,7 +95,7 @@ class Finance
      */
     public function listBank(): array
     {
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + secretKey)
         $signatureParams =
@@ -111,7 +103,7 @@ class Finance
             $timestamp.
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = [
             'userId' => (int) $this->config->getUserId(),
@@ -120,9 +112,7 @@ class Finance
             'signature' => $signature,
         ];
 
-        $endpoint = $this->config->isSandbox()
-            ? '/webapi/api/disbursement/listBank'
-            : '/webapi/api/disbursement/listBank';
+        $endpoint = '/webapi/api/disbursement/listBank';
 
         $response = $this->client->request()->post($endpoint, $payload);
 
@@ -136,7 +126,6 @@ class Finance
             return $data['listBank'];
         }
 
-        // Fallback: Return raw data if we can't parse it specifically, but let's try to be helpful.
         return $data;
     }
 }

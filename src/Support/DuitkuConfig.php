@@ -40,4 +40,44 @@ class DuitkuConfig
     {
         return (string) ($this->config['email'] ?? '');
     }
+
+    /**
+     * Get Host for Main Payment/Disbursement/Finance
+     */
+    public function getPassportHost(): string
+    {
+        return $this->isSandbox()
+            ? 'https://sandbox.duitku.com'
+            : 'https://passport.duitku.com';
+    }
+
+    /**
+     * Get Host for POP Checkout API
+     */
+    public function getApiHost(): string
+    {
+        return $this->isSandbox()
+            ? 'https://api-sandbox.duitku.com'
+            : 'https://api-prod.duitku.com';
+    }
+
+    /**
+     * Get Host for Frontend Assets (JS)
+     */
+    public function getAppHost(): string
+    {
+        return $this->isSandbox()
+            ? 'https://app-sandbox.duitku.com'
+            : 'https://app-prod.duitku.com';
+    }
+
+    /**
+     * Get Host for CashOut Inquiry
+     */
+    public function getDisbursementHost(): string
+    {
+        return $this->isSandbox()
+            ? 'https://disbursement-sandbox.duitku.com'
+            : 'https://disbursement.duitku.com';
+    }
 }

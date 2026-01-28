@@ -2,6 +2,7 @@
 
 namespace Duitku\Laravel\Services\Disbursement;
 
+use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\DisbursementInfo;
 use Duitku\Laravel\Data\DisbursementResponse;
 use Duitku\Laravel\Http\Client;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Http;
 
 class Transfer
 {
+    use InteractsWithApi;
+
     protected Client $client;
 
     public function __construct(
@@ -24,7 +27,7 @@ class Transfer
      */
     public function inquiry(DisbursementInfo $info): DisbursementResponse
     {
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + bankCode + bankAccount + amountTransfer + purpose + secretKey)
         $signatureParams =
@@ -36,7 +39,7 @@ class Transfer
             $info->purpose.
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = array_merge($info->toArray(), [
             'userId' => (int) $this->config->getUserId(),
@@ -63,7 +66,7 @@ class Transfer
      */
     public function execute(string $disburseId, DisbursementInfo $info, string $accountName, string $custRefNumber): DisbursementResponse
     {
-        $timestamp = round(microtime(true) * 1000);
+        $timestamp = $this->getTimestamp();
 
         // Formula: SHA256(email + timestamp + bankCode + bankAccount + accountName + custRefNumber + amountTransfer + purpose + disburseId + secretKey)
         $signatureParams =
@@ -78,7 +81,7 @@ class Transfer
             $disburseId.
             $this->config->getApiKey();
 
-        $signature = hash('sha256', $signatureParams);
+        $signature = $this->generateSignature($signatureParams, 'sha256');
 
         $payload = [
             'disburseId' => $disburseId,
@@ -119,7 +122,7 @@ class Transfer
         $responses = Http::pool(function (Pool $pool) use ($infos) {
             $requests = [];
             foreach ($infos as $info) {
-                $timestamp = round(microtime(true) * 1000);
+                $timestamp = $this->getTimestamp();
 
                 $signatureParams =
                     $this->config->getEmail().
@@ -130,7 +133,7 @@ class Transfer
                     $info->purpose.
                     $this->config->getApiKey();
 
-                $signature = hash('sha256', $signatureParams);
+                $signature = $this->generateSignature($signatureParams, 'sha256');
 
                 $payload = array_merge($info->toArray(), [
                     'userId' => (int) $this->config->getUserId(),
@@ -139,11 +142,11 @@ class Transfer
                     'signature' => $signature,
                 ]);
 
-                $endpoint = $this->config->isSandbox()
-                    ? 'https://sandbox.duitku.com/webapi/api/disbursement/inquirysandbox'
-                    : 'https://passport.duitku.com/webapi/api/disbursement/inquiry';
+                $url = $this->config->getPassportHost().($this->config->isSandbox()
+                    ? '/webapi/api/disbursement/inquirysandbox'
+                    : '/webapi/api/disbursement/inquiry');
 
-                $requests[] = $pool->post($endpoint, $payload);
+                $requests[] = $pool->post($url, $payload);
             }
 
             return $requests;
