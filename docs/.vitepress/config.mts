@@ -4,6 +4,7 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "Duitku Laravel",
   description: "Duitku Payment Gateway SDK for Laravel",
+  base: "/duitku-laravel/",
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
