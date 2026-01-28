@@ -1,14 +1,14 @@
 <?php
 
 use Duitku\Laravel\Data\DisbursementInfo;
-use Duitku\Laravel\Events\DuitkuPaymentReceived;
 use Duitku\Laravel\Events\DuitkuPaymentFailed;
-use Duitku\Laravel\Exceptions\InvalidSignatureException;
+use Duitku\Laravel\Events\DuitkuPaymentReceived;
 use Duitku\Laravel\Exceptions\InsufficientFundsException;
+use Duitku\Laravel\Exceptions\InvalidSignatureException;
 use Duitku\Laravel\Facades\Duitku;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Config;
 
 beforeEach(function () {
     Config::set('duitku.merchant_code', 'D1234');
@@ -82,12 +82,12 @@ test('throwIfFailed throws correct exception for insufficient funds', function (
     Http::fake([
         '*/webapi/api/disbursement/inquirysandbox' => Http::response([
             'responseCode' => '-510',
-            'responseDesc' => 'Insufficient Balance'
-        ], 200)
+            'responseDesc' => 'Insufficient Balance',
+        ], 200),
     ]);
 
     $info = new DisbursementInfo(99999999, '123', '014', 'Test');
 
-    expect(fn() => Duitku::disbursement()->transfer()->inquiry($info)->throwIfFailed())
+    expect(fn () => Duitku::disbursement()->transfer()->inquiry($info)->throwIfFailed())
         ->toThrow(InsufficientFundsException::class);
 });

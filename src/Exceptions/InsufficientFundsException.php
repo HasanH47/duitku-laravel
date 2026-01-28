@@ -2,7 +2,7 @@
 
 namespace Duitku\Laravel\Exceptions;
 
-class InsufficientFundsException extends DuitkuException
+class InsufficientFundsException extends DuitkuApiException
 {
     //
 }

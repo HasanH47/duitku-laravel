@@ -2,7 +2,7 @@
 
 namespace Duitku\Laravel\Exceptions;
 
-class InvalidSignatureException extends DuitkuException
+class InvalidSignatureException extends DuitkuApiException
 {
     //
 }

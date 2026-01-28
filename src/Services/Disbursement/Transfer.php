@@ -110,7 +110,8 @@ class Transfer
     /**
      * Bulk Bank Inquiry (Parallel)
      * Useful for checking multiple accounts before mass payouts.
-     * @param DisbursementInfo[] $infos
+     *
+     * @param  DisbursementInfo[]  $infos
      * @return DisbursementResponse[]
      */
     public function bulkInquiry(array $infos): array
@@ -144,6 +145,7 @@ class Transfer
 
                 $requests[] = $pool->post($endpoint, $payload);
             }
+
             return $requests;
         });
 
@@ -151,9 +153,10 @@ class Transfer
             if ($response instanceof \Exception) {
                 return new DisbursementResponse(
                     responseCode: 'EE',
-                    responseDesc: 'Request failed: ' . $response->getMessage()
+                    responseDesc: 'Request failed: '.$response->getMessage()
                 );
             }
+
             return DisbursementResponse::fromArray($response->json());
         }, $responses);
     }
