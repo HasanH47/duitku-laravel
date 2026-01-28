@@ -2,6 +2,10 @@
 
 namespace Duitku\Laravel\Data;
 
+use Duitku\Laravel\Exceptions\DuitkuApiException;
+use Duitku\Laravel\Exceptions\InsufficientFundsException;
+use Duitku\Laravel\Support\DisbursementCode;
+
 class DisbursementResponse
 {
     public function __construct(
@@ -37,5 +41,24 @@ class DisbursementResponse
             balance: isset($data['balance']) ? (float) $data['balance'] : null,
             effectiveBalance: isset($data['effectiveBalance']) ? (float) $data['effectiveBalance'] : null
         );
+    }
+
+    /**
+     * Throw an exception if the response indicates a failure.
+     *
+     * @throws DuitkuApiException
+     */
+    public function throwIfFailed(): self
+    {
+        if ($this->responseCode === DisbursementCode::SUCCESS) {
+            return $this;
+        }
+
+        if ($this->responseCode === DisbursementCode::INSUFFICIENT_FUNDS) {
+            throw new InsufficientFundsException($this->responseDesc, $this->responseCode);
+        }
+
+        // Generic API Exception for other codes
+        throw new DuitkuApiException($this->responseDesc, $this->responseCode);
     }
 }

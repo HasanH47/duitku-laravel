@@ -2,6 +2,9 @@
 
 namespace Duitku\Laravel\Data;
 
+use Duitku\Laravel\Exceptions\DuitkuApiException;
+use Duitku\Laravel\Support\PaymentCode;
+
 class PaymentResponse
 {
     public function __construct(
@@ -21,5 +24,19 @@ class PaymentResponse
             statusCode: $data['statusCode'] ?? null,
             statusMessage: $data['statusMessage'] ?? null
         );
+    }
+
+    /**
+     * Throw an exception if the response indicates a failure.
+     *
+     * @throws DuitkuApiException
+     */
+    public function throwIfFailed(): self
+    {
+        if ($this->statusCode === PaymentCode::SUCCESS || empty($this->statusCode)) {
+            return $this;
+        }
+
+        throw new DuitkuApiException($this->statusMessage ?? 'Payment request failed', $this->statusCode);
     }
 }

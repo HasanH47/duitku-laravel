@@ -126,36 +126,88 @@ echo $response->reference; // Gunakan ini di frontend JS
 ```
 
 **Langkah 2: Frontend (Tampilkan Popup)**
-Muat script Duitku dan panggil fungsi checkout.
+Anda bisa menggunakan Blade Component untuk cara yang lebih mudah:
+
+```html
+<x-duitku-pop :reference="$response->reference" class="btn-primary">
+  Bayar Sekarang
+</x-duitku-pop>
+```
+
+Atau cara manual:
 
 ```html
 <script src="{{ Duitku::pop()->scriptUrl() }}"></script>
-
-<script type="text/javascript">
-  function bayar() {
-    checkout.process("{{ $response->reference }}", {
-      successEvent: function (result) {
-        // Callback sukses di frontend
-        // result.resultCode = '00'
-        window.location.href = "/success";
-      },
-      pendingEvent: function (result) {
-        // result.resultCode = '01'
-        window.location.href = "/pending";
-      },
-      errorEvent: function (result) {
-        // result.resultCode = '02'
-        window.location.href = "/error";
-      },
-      closeEvent: function (result) {
-        // Saat popup ditutup
-      },
-    });
-  }
-</script>
+...
 ```
 
-### 5. Disbursement (Transfer Dana / Payout)
+### 5. Fitur SDK (Advanced) 🚀
+
+Package ini lebih dari sekadar wrapper API; ini adalah SDK lengkap yang terintegrasi dengan fitur-fitur Laravel.
+
+#### Event-Driven Callback
+
+Alih-alih menulis banyak logic di controller, gunakan Laravel Events. Anda cukup membuat _Listener_ untuk menangkap status pembayaran.
+
+```php
+// 1. Di Controller Anda
+public function callback(Request $request) {
+    // Otomatis validasi signature & dispatch event
+    Duitku::handleCallback($request->all());
+
+    return response('OK');
+}
+
+// 2. Buat Listener (php artisan make:listener UpdateOrderPaid)
+namespace App\Listeners;
+
+use Duitku\Laravel\Events\DuitkuPaymentReceived;
+
+class UpdateOrderPaid
+{
+    public function handle(DuitkuPaymentReceived $event): void
+    {
+        $callback = $event->callback; // DTO CallbackRequest
+
+        // Update database Anda
+        // $order = Order::where('merchantOrderId', $callback->merchantOrderId)->first();
+        // $order->update(['status' => 'paid']);
+    }
+}
+```
+
+_Laravel 10+ otomatis mendeteksi listener ini selama event di type-hint dengan benar._
+
+#### Custom Exceptions
+
+Gunakan `try-catch` untuk menangani error spesifik dari Duitku.
+
+```php
+use Duitku\Laravel\Exceptions\InsufficientFundsException;
+
+try {
+    Duitku::disbursement()->transfer()->execute(...)->throwIfFailed();
+} catch (InsufficientFundsException $e) {
+    // Handle saldo tidak cukup
+} catch (\Exception $e) {
+    // Handle error lainnya
+}
+```
+
+#### Bulk Bank Inquiry (Disbursement)
+
+Cek puluhan rekening sekaligus secara paralel menggunakan `Http::pool`.
+
+```php
+$infos = [
+    new DisbursementInfo(10000, 'rekening1', '014', 'Gaji'),
+    new DisbursementInfo(20000, 'rekening2', '014', 'Gaji'),
+];
+
+$results = Duitku::disbursement()->transfer()->bulkInquiry($infos);
+```
+
+### 6. Disbursement (Transfer Dana / Payout)
 
 Untuk menggunakan fitur Disbursement, tambahkan `DUITKU_USER_ID` dan `DUITKU_EMAIL` di `.env` terlebih dahulu.
 

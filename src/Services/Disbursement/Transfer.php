@@ -6,6 +6,8 @@ use Duitku\Laravel\Data\DisbursementInfo;
 use Duitku\Laravel\Data\DisbursementResponse;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Support\DuitkuConfig;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Support\Facades\Http;
 
 class Transfer
 {
@@ -103,5 +105,56 @@ class Transfer
         }
 
         return DisbursementResponse::fromArray($response->json());
+    }
+
+    /**
+     * Bulk Bank Inquiry (Parallel)
+     * Useful for checking multiple accounts before mass payouts.
+     * @param DisbursementInfo[] $infos
+     * @return DisbursementResponse[]
+     */
+    public function bulkInquiry(array $infos): array
+    {
+        $responses = Http::pool(function (Pool $pool) use ($infos) {
+            $requests = [];
+            foreach ($infos as $info) {
+                $timestamp = round(microtime(true) * 1000);
+
+                $signatureParams =
+                    $this->config->getEmail().
+                    $timestamp.
+                    $info->bankCode.
+                    $info->bankAccount.
+                    $info->amountTransfer.
+                    $info->purpose.
+                    $this->config->getApiKey();
+
+                $signature = hash('sha256', $signatureParams);
+
+                $payload = array_merge($info->toArray(), [
+                    'userId' => (int) $this->config->getUserId(),
+                    'email' => $this->config->getEmail(),
+                    'timestamp' => $timestamp,
+                    'signature' => $signature,
+                ]);
+
+                $endpoint = $this->config->isSandbox()
+                    ? 'https://sandbox.duitku.com/webapi/api/disbursement/inquirysandbox'
+                    : 'https://passport.duitku.com/webapi/api/disbursement/inquiry';
+
+                $requests[] = $pool->post($endpoint, $payload);
+            }
+            return $requests;
+        });
+
+        return array_map(function ($response) {
+            if ($response instanceof \Exception) {
+                return new DisbursementResponse(
+                    responseCode: 'EE',
+                    responseDesc: 'Request failed: ' . $response->getMessage()
+                );
+            }
+            return DisbursementResponse::fromArray($response->json());
+        }, $responses);
     }
 }

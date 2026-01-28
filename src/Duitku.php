@@ -7,6 +7,10 @@ use Duitku\Laravel\Data\CallbackRequest;
 use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Data\PaymentResponse;
 use Duitku\Laravel\Data\TransactionStatus;
+use Duitku\Laravel\Events\DuitkuCallbackReceived;
+use Duitku\Laravel\Events\DuitkuPaymentFailed;
+use Duitku\Laravel\Events\DuitkuPaymentReceived;
+use Duitku\Laravel\Exceptions\InvalidSignatureException;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Services\Pop;
 use Duitku\Laravel\Support\DuitkuConfig;
@@ -148,5 +152,32 @@ class Duitku
         );
 
         return $generatedSignature === $callback->signature;
+    }
+
+    /**
+     * Handle Callback (SDK Style)
+     * Validates signature, dispatches Laravel events, and throws exceptions.
+     *
+     * @throws InvalidSignatureException
+     */
+    public function handleCallback(array $data): CallbackRequest
+    {
+        if (! $this->validateCallback($data)) {
+            throw new InvalidSignatureException('Duitku callback signature validation failed.');
+        }
+
+        $callback = CallbackRequest::fromArray($data);
+
+        // General event for any validated callback
+        event(new DuitkuCallbackReceived($data));
+
+        // Specific payment events
+        if ($callback->resultCode === '00') {
+            event(new DuitkuPaymentReceived($callback));
+        } else {
+            event(new DuitkuPaymentFailed($callback));
+        }
+
+        return $callback;
     }
 }
