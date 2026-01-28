@@ -21,22 +21,19 @@ jobs:
           - laravel: 10.*
             testbench: 8.*
             carbon: ^2.63
-            pest: ^2.0
+            pest: ^2.34
             collision: ^7.0
           - laravel: 11.*
             testbench: 9.*
             carbon: ^3.0
-            pest: ^3.0
+            pest: ^3.7
             collision: ^8.1
           - laravel: 12.*
             testbench: 10.*
             carbon: ^3.0
             pest: ^4.0
             collision: ^8.1
-          # Override for PHP 8.5 on Laravel 11 to use Pest 4
-          - laravel: 11.*
-            php: 8.5
-            pest: ^4.0
+
         exclude:
           - laravel: 10.*
             php: 8.4
