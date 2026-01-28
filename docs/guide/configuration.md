@@ -10,27 +10,39 @@ Isi default dari `config/duitku.php` adalah sebagai berikut:
 return [
     /*
     |--------------------------------------------------------------------------
-    | Duitku Merchant Credentials
+    | Duitku Merchant Code
     |--------------------------------------------------------------------------
     */
-    'merchant_code' => env('DUITKU_MERCHANT_CODE'),
-    'api_key' => env('DUITKU_API_KEY'),
+    'merchant_code' => env('DUITKU_MERCHANT_CODE', ''),
 
     /*
     |--------------------------------------------------------------------------
-    | Environment Settings
+    | Duitku API Key
     |--------------------------------------------------------------------------
     */
-    'sandbox' => env('DUITKU_SANDBOX_MODE', true),
+    'api_key' => env('DUITKU_API_KEY', ''),
 
     /*
     |--------------------------------------------------------------------------
-    | Default URLs
+    | Sandbox Mode
     |--------------------------------------------------------------------------
-    | URLs ini digunakan untuk mengarahkan user setelah transaksi.
     */
-    'return_url' => env('DUITKU_RETURN_URL', 'https://example.com/return'),
-    'callback_url' => env('DUITKU_CALLBACK_URL', 'https://example.com/callback'),
+    'sandbox_mode' => env('DUITKU_SANDBOX_MODE', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Expiry Period
+    |--------------------------------------------------------------------------
+    */
+    'default_expiry' => env('DUITKU_DEFAULT_EXPIRY', 60),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Duitku Disbursement Config
+    |--------------------------------------------------------------------------
+    */
+    'user_id' => env('DUITKU_USER_ID', ''),
+    'email' => env('DUITKU_EMAIL', ''),
 ];
 ```
 
@@ -42,15 +54,19 @@ Merchant Code unik Anda yang terdaftar di sistem Duitku.
 
 ### `api_key`
 
-API Key rahasia yang digunakan untuk menghasilkan signature HMAC. **Jangan pernah membagikan key ini!**
+API Key rahasia yang digunakan untuk menghasilkan signature HMAC.
 
-### `sandbox`
+### `sandbox_mode`
 
-Jika diatur ke `true`, SDK akan mengarah ke endpoint sandbox Duitku. Gunakan kartu testing saat dalam mode ini.
+Jika diatur ke `true`, SDK akan mengarah ke endpoint sandbox Duitku.
 
-### `callback_url`
+### `default_expiry`
 
-Endpoint di aplikasi Anda yang akan menerima notifikasi HTTP POST dari Duitku saat status transaksi berubah. Pastikan endpoint ini dapat diakses secara publik dan tidak diblokir oleh CSRF protection.
+Waktu expired pembayaran dalam menit (default: 60 menit).
+
+### `user_id` & `email`
+
+Diperlukan khusus untuk fitur **Disbursement** (Transfer Online). Gunakan kredensial yang diberikan oleh tim Duitku untuk akses Disbursement.
 
 ---
 

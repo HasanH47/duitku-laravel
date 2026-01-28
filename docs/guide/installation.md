@@ -31,6 +31,8 @@ Buka file `.env` Anda dan tambahkan informasi kredensial yang didapat dari Dashb
 DUITKU_MERCHANT_CODE=DXXX
 DUITKU_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 DUITKU_SANDBOX_MODE=true
+DUITKU_USER_ID=your-user-id
+DUITKU_EMAIL=your-email@example.com
 ```
 
 > [!TIP]
