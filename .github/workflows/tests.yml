@@ -21,9 +21,8 @@ jobs:
           - laravel: 10.*
             testbench: 8.*
             carbon: ^2.63
-            pest: ^2.36
-            pest_plugin: ^2.4
-            phpunit: "phpunit/phpunit:10.5.15"
+            pest: ^2.35
+            pest_plugin: ^2.0
             collision: ^7.0
           - laravel: 11.*
             testbench: 9.*
@@ -69,8 +68,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "nesbot/carbon:${{ matrix.carbon }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest_plugin }}" "nunomaduro/collision:${{ matrix.collision }}" "${{ matrix.phpunit }}" --dev --no-interaction --no-update
-          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "nesbot/carbon:${{ matrix.carbon }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest_plugin }}" "nunomaduro/collision:${{ matrix.collision }}" --dev --no-interaction --no-update
+          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction --no-audit
 
       - name: Execute tests
         run: vendor/bin/pest
