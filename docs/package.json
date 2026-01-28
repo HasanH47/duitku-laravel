@@ -1,0 +1,14 @@
+{
+  "name": "duitku-laravel-docs",
+  "version": "1.3.1",
+  "description": "Documentation for Duitku Laravel SDK",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "latest",
+    "vue": "latest"
+  }
+}
