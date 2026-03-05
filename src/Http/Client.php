@@ -13,11 +13,18 @@ class Client
 
     public function request(?string $baseUrl = null): PendingRequest
     {
-        return Http::baseUrl($baseUrl ?? $this->config->getPassportHost())
-            ->timeout(30)
+        $request = Http::baseUrl($baseUrl ?? $this->config->getPassportHost())
+            ->timeout($this->config->getTimeout())
             ->withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ]);
+
+        $retryTimes = $this->config->getRetryTimes();
+        if ($retryTimes > 0) {
+            $request = $request->retry($retryTimes, $this->config->getRetrySleep());
+        }
+
+        return $request;
     }
 }

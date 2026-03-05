@@ -65,6 +65,7 @@ Menangani notifikasi pembayaran dari Duitku.
 
 ```php
 use Duitku\Laravel\Facades\Duitku;
+use Duitku\Laravel\Support\PaymentCode;
 use Illuminate\Http\Request;
 
 public function handleCallback(Request $request)
@@ -77,8 +78,6 @@ public function handleCallback(Request $request)
     // Proses Order
     $orderId = $request->merchantOrderId;
     $status = $request->resultCode; // '00' = Sukses
-
-    use Duitku\Laravel\Support\PaymentCode;
 
     if ($status === PaymentCode::SUCCESS) {
         // Update database: Order Telah Dibayar
@@ -246,7 +245,7 @@ $transfer = Duitku::disbursement()->transfer(
 echo $transfer->responseCode; // 00 = Sukses
 ```
 
-### 5. Clearing (BIFAST / RTGS / LLG)
+### 8. Clearing (BIFAST / RTGS / LLG)
 
 Untuk transfer nominal besar atau metode spesifik.
 
@@ -271,7 +270,7 @@ $transfer = Duitku::disbursement()->clearing()->execute(
 );
 ```
 
-### 6. Cash Out (Tarik Tunai via Retail)
+### 9. Cash Out (Tarik Tunai via Retail)
 
 Tarik tunai lewat Indomaret atau Pos Indonesia.
 
@@ -292,7 +291,7 @@ $response = Duitku::disbursement()->cashOut()->inquiry($info);
 echo $response->token;
 ```
 
-### 7. Fitur Finance (Cek Status, Saldo, List Bank)
+### 10. Fitur Finance (Cek Status, Saldo, List Bank)
 
 Menggunakan helper `DisbursementCode` agar pengecekan status lebih rapi.
 

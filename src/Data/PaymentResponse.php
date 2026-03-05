@@ -12,7 +12,11 @@ class PaymentResponse
         public string $reference,
         public string $paymentUrl,
         public ?string $statusCode = null,
-        public ?string $statusMessage = null
+        public ?string $statusMessage = null,
+        public ?string $vaNumber = null,
+        public ?string $amount = null,
+        public ?string $qrString = null,
+        public ?string $appUrl = null
     ) {}
 
     public static function fromArray(array $data): self
@@ -22,7 +26,11 @@ class PaymentResponse
             reference: $data['reference'] ?? '',
             paymentUrl: $data['paymentUrl'] ?? '',
             statusCode: $data['statusCode'] ?? null,
-            statusMessage: $data['statusMessage'] ?? null
+            statusMessage: $data['statusMessage'] ?? null,
+            vaNumber: $data['vaNumber'] ?? null,
+            amount: $data['amount'] ?? null,
+            qrString: $data['qrString'] ?? null,
+            appUrl: $data['AppUrl'] ?? $data['appUrl'] ?? null
         );
     }
 

@@ -4,16 +4,20 @@ Duitku POP (Snap) memungkinkan user Anda untuk melakukan pembayaran tanpa mening
 
 ## Membuat Checkout POP
 
-Prosesnya sangat mirip dengan pembuatan invoice biasa, namun menggunakan method `createPop`.
+Prosesnya sangat mirip dengan checkout biasa, tetapi menggunakan `Duitku::pop()->createTransaction()`.
 
 ```php
-$response = Duitku::payment()->createPop(
-    amount: 170000,
-    merchantOrderId: 'INV-2026-002',
-    productDetails: 'Pembelian Lisensi',
-    customerVaName: 'Budi Arto',
-    email: 'budi@example.com'
+use Duitku\Laravel\Facades\Duitku;
+use Duitku\Laravel\Data\PaymentRequest;
+
+$request = new PaymentRequest(
+    amount: 10000,
+    merchantOrderId: 'INV-001',
+    productDetails: 'Test Item',
+    email: 'customer@example.com'
 );
+
+$response = Duitku::pop()->createTransaction($request);
 
 // $response->reference adalah token yang dibutuhkan oleh Javascript Duitku POP
 ```
@@ -25,24 +29,40 @@ SDK ini menyediakan Blade Component yang sangat memudahkan untuk menampilkan tom
 Jika Anda ingin menggunakan Javascript manual:
 
 ```html
-<script src="https://sandbox.duitku.com/2pb/js/duitku-pop.js"></script>
-<!-- Gunakan link produksi jika mode sandbox false -->
+<!-- Muat script Duitku POP (otomatis sesuai environment sandbox/production) -->
+<script src="{{ Duitku::pop()->scriptUrl() }}"></script>
 
 <button onclick="pay()">Bayar Sekarang</button>
 
 <script>
   function pay() {
     checkout.process("{{ $response->reference }}", {
-      successPath: "/success",
-      callbackPath: "/callback-frontend",
-      outputPath: "/checkout-finish",
+      successEvent: function (result) {
+        console.log("success", result);
+      },
+      pendingEvent: function (result) {
+        console.log("pending", result);
+      },
+      errorEvent: function (result) {
+        console.log("error", result);
+      },
+      closeEvent: function (result) {
+        console.log("closed", result);
+      },
     });
   }
 </script>
 ```
 
-> [!IMPORTANT]
-> Pastikan Anda memuat script JS Duitku POP yang sesuai dengan environment Anda (Sandbox vs Production).
+## Cek Status & Daftar Metode Pembayaran (POP)
+
+```php
+// Cek status transaksi POP
+$status = Duitku::pop()->checkTransaction('INV-001');
+
+// Daftar metode pembayaran POP
+$methods = Duitku::pop()->getPaymentMethod(10000);
+```
 
 ---
 

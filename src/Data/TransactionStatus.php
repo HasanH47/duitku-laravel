@@ -9,7 +9,8 @@ class TransactionStatus
         public string $reference,
         public string $amount,
         public string $statusCode,
-        public string $statusMessage
+        public string $statusMessage,
+        public ?string $fee = null
     ) {}
 
     public static function fromArray(array $data): self
@@ -19,7 +20,8 @@ class TransactionStatus
             reference: $data['reference'] ?? '',
             amount: $data['amount'] ?? '0',
             statusCode: $data['statusCode'] ?? '',
-            statusMessage: $data['statusMessage'] ?? ''
+            statusMessage: $data['statusMessage'] ?? '',
+            fee: $data['fee'] ?? null
         );
     }
 }

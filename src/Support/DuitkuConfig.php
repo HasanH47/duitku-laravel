@@ -80,4 +80,24 @@ class DuitkuConfig
             ? 'https://disbursement-sandbox.duitku.com'
             : 'https://disbursement.duitku.com';
     }
+
+    public function getTimeout(): int
+    {
+        return (int) ($this->config['timeout'] ?? 30);
+    }
+
+    public function getRetryTimes(): int
+    {
+        return (int) ($this->config['retry_times'] ?? 0);
+    }
+
+    public function getRetrySleep(): int
+    {
+        return (int) ($this->config['retry_sleep'] ?? 100);
+    }
+
+    public function getLogChannel(): ?string
+    {
+        return $this->config['log_channel'] ?? null;
+    }
 }

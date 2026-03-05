@@ -51,4 +51,27 @@ return [
     */
     'user_id' => env('DUITKU_USER_ID', ''),
     'email' => env('DUITKU_EMAIL', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | HTTP Client Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure timeout (seconds) and retry behavior for API requests.
+    |
+    */
+    'timeout' => env('DUITKU_TIMEOUT', 30),
+    'retry_times' => env('DUITKU_RETRY_TIMES', 0),
+    'retry_sleep' => env('DUITKU_RETRY_SLEEP', 100), // milliseconds
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    |
+    | Set a Laravel log channel to log all Duitku API requests/responses.
+    | Set to null to disable logging.
+    |
+    */
+    'log_channel' => env('DUITKU_LOG_CHANNEL', null),
 ];

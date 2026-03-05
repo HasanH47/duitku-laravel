@@ -7,6 +7,8 @@ class PaymentCode
     // Common / Success
     public const SUCCESS = '00';
 
+    public const PENDING = '01';
+
     // Callback Status Codes
     public const CALLBACK_SUCCESS = '00';
 

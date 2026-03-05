@@ -1,47 +1,51 @@
 # Usage: Payments
 
-Bagian ini menjelaskan cara membuat transaksi pembayaran dasar menggunakan facade `Duitku`.
+Bagian ini menjelaskan cara membuat transaksi pembayaran menggunakan facade `Duitku`.
 
-## Membuat Transaksi
+## Membuat Transaksi (Checkout)
 
-Untuk membuat transaksi baru, gunakan method `createInvoice`. Method ini menerima detail item, jumlah pembayaran, dan ID order Anda.
+Untuk membuat transaksi baru, gunakan method `checkout()`. Method ini menerima object `PaymentRequest` dan mengembalikan `PaymentResponse`.
 
 ```php
 use Duitku\Laravel\Facades\Duitku;
-use Duitku\Laravel\Data\ItemDetails;
+use Duitku\Laravel\Data\PaymentRequest;
 
-$itemDetails = [
-    new ItemDetails('Kaos Developer', 150000, 1),
-    new ItemDetails('Sticker Pack', 10000, 2),
-];
-
-$response = Duitku::payment()->createInvoice(
-    amount: 170000,
-    merchantOrderId: 'INV-2026-001',
-    productDetails: 'Pembelian Merchandise',
-    customerVaName: 'Hasan H',
-    email: 'me@hasanh.dev',
-    itemDetails: $itemDetails,
-    paymentMethod: 'VC', // Opsional: Kosongkan untuk menampilkan semua metode di halaman Duitku
-    expiryPeriod: 60 // Dalam menit
+$request = new PaymentRequest(
+    amount: 50000,
+    merchantOrderId: 'INV-' . time(),
+    productDetails: 'Topup Game Diamonds',
+    email: 'pelanggan@example.com',
+    paymentMethod: 'VC' // Opsional: kosongkan untuk menampilkan semua metode
 );
 
-if ($response->statusCode === '00') {
-    // Arahkan user ke URL pembayaran
-    return redirect($response->paymentUrl);
-}
+$response = Duitku::checkout($request);
+
+// Arahkan user ke URL pembayaran
+return redirect($response->paymentUrl);
 ```
+
+> [!TIP]
+> Anda juga bisa menggunakan `PaymentMethod` Enum agar lebih aman dari typo:
+>
+> ```php
+> use Duitku\Laravel\Enums\PaymentMethod;
+>
+> $request = new PaymentRequest(
+>     // ...
+>     paymentMethod: PaymentMethod::CREDIT_CARD->value,
+> );
+> ```
 
 ## Cek Status Transaksi
 
-Anda dapat mengecek status pembayaran berdasarkan ID order yang Anda kirimkan sebelumnya.
-
 ```php
-$status = Duitku::payment()->checkStatus('INV-2026-001');
+use Duitku\Laravel\Support\PaymentCode;
 
-if ($status->statusCode === '00') {
+$status = Duitku::checkStatus('INV-123');
+
+if ($status->statusCode === PaymentCode::SUCCESS) {
     echo "Pembayaran Berhasil!";
-} elseif ($status->statusCode === '01') {
+} elseif ($status->statusCode === PaymentCode::PENDING) {
     echo "Pembayaran Pending.";
 } else {
     echo "Pembayaran Gagal/Expired.";
@@ -53,11 +57,10 @@ if ($status->statusCode === '00') {
 Untuk menampilkan daftar metode pembayaran yang tersedia beserta biaya administrasinya:
 
 ```php
-$methods = Duitku::payment()->listMethods(170000);
+$methods = Duitku::paymentMethods(170000);
 
 foreach ($methods as $method) {
-    echo "Method: " . $method->paymentName;
-    echo "Fee: " . $method->fee;
+    echo $method['paymentMethod'] . ': ' . $method['paymentName'];
 }
 ```
 
