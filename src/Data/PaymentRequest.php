@@ -16,7 +16,12 @@ class PaymentRequest
         public array $customerDetail = [],
         public ?string $callbackUrl = null,
         public ?string $returnUrl = null,
-        public ?int $expiryPeriod = null
+        public ?int $expiryPeriod = null,
+        public ?string $additionalParam = null,
+        public ?string $merchantUserInfo = null,
+        public ?array $accountLink = null,
+        public ?array $creditCardDetail = null,
+        public ?string $merchantCustomerId = null
     ) {}
 
     public function toArray(): array
@@ -34,6 +39,11 @@ class PaymentRequest
             'callbackUrl' => $this->callbackUrl,
             'returnUrl' => $this->returnUrl,
             'expiryPeriod' => $this->expiryPeriod,
-        ], fn ($value) => ! is_null($value));
+            'additionalParam' => $this->additionalParam,
+            'merchantUserInfo' => $this->merchantUserInfo,
+            'accountLink' => $this->accountLink,
+            'creditCardDetail' => $this->creditCardDetail,
+            'merchantCustomerId' => $this->merchantCustomerId,
+        ], fn ($value) => ! is_null($value) && $value !== [] && $value !== '');
     }
 }

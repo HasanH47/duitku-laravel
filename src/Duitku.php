@@ -81,7 +81,7 @@ class Duitku
             $response->throw();
         }
 
-        return PaymentResponse::fromArray($response->json());
+        return PaymentResponse::fromArray($response->json())->throwIfFailed();
     }
 
     /**

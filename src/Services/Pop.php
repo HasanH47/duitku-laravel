@@ -47,7 +47,7 @@ class Pop
             $response->throw();
         }
 
-        return PopResponse::fromArray($response->json());
+        return PopResponse::fromArray($response->json())->throwIfFailed();
     }
 
     /**
