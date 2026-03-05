@@ -180,7 +180,7 @@ foreach ($methods as $method) {
 ### Popup tidak muncul
 
 - **Penyebab:** Script JS Duitku tidak ter-load
-- **Solusi:** Pastikan `<script src="{{ Duitku::pop()->scriptUrl() }}">` ada di halaman, dan tidak ada error di browser console
+- **Solusi:** Pastikan tag `script` dengan `Duitku::pop()->scriptUrl()` ada di halaman, dan tidak ada error di browser console
 
 ### Error "checkout is not defined"
 
