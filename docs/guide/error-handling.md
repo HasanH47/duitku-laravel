@@ -43,6 +43,45 @@ catch (DuitkuApiException $e) {
 }
 ```
 
+## Referensi Error Code
+
+SDK menyediakan class `ErrorCode` yang berisi semua kode error dari Duitku docs:
+
+```php
+use Duitku\Laravel\Enums\ErrorCode;
+
+// === HTTP Status Codes ===
+ErrorCode::HTTP_SUCCESS;       // 200
+ErrorCode::HTTP_BAD_REQUEST;   // 400
+ErrorCode::HTTP_UNAUTHORIZED;  // 401
+ErrorCode::HTTP_NOT_FOUND;     // 404
+ErrorCode::HTTP_CONFLICT;      // 409
+ErrorCode::HTTP_SERVER_ERROR;  // 500
+
+// === Error Messages dari 400 Bad Request ===
+ErrorCode::MIN_PAYMENT;           // 'Minimum Payment 10000 IDR'
+ErrorCode::MAX_PAYMENT;           // 'Maximum Payment exceeded'
+ErrorCode::PAYMENT_METHOD_REQUIRED; // 'paymentMethod is mandatory'
+ErrorCode::ORDER_ID_REQUIRED;     // 'merchantOrderId is mandatory'
+ErrorCode::INVALID_EMAIL;         // 'Invalid Email Address'
+ErrorCode::VA_NAME_REQUIRED;      // 'Customer VA Name must not be empty...'
+ErrorCode::WRONG_SIGNATURE;       // 'Wrong signature' (401)
+ErrorCode::MERCHANT_NOT_FOUND;    // 'Merchant not found' (404)
+ErrorCode::AMOUNT_MISMATCH;       // 'Payment amount must be equal...' (409)
+
+// === API Status Codes ===
+ErrorCode::SUCCESS;  // '00' - Berhasil
+ErrorCode::PENDING;  // '01' - Pending
+ErrorCode::FAILED;   // '02' - Gagal
+
+// === Helper Methods ===
+ErrorCode::describeHttp(400);              // 'Ada kesalahan pada saat mengirimkan...'
+ErrorCode::describeStatus('00', 'callback'); // 'Transaksi telah sukses terbayarkan.'
+ErrorCode::isSuccess('00');                // true
+ErrorCode::isPending('01');                // true
+ErrorCode::isFailed('02');                 // true
+```
+
 ---
 
 Terakhir, pelajari tentang [Blade Components](./blade-components).

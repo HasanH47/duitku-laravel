@@ -4,6 +4,7 @@ namespace Duitku\Laravel;
 
 use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\CallbackRequest;
+use Duitku\Laravel\Data\PaymentFee;
 use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Data\PaymentResponse;
 use Duitku\Laravel\Data\TransactionStatus;
@@ -42,6 +43,8 @@ class Duitku
     /**
      * Get Payment Methods
      * Direct API call without internal caching to allow developer flexibility.
+     *
+     * @return PaymentFee[]
      */
     public function paymentMethods(int $amount): array
     {
@@ -58,7 +61,7 @@ class Duitku
             'signature' => $signature,
         ]);
 
-        return $response->json('paymentFee') ?? [];
+        return PaymentFee::fromList($response->json('paymentFee') ?? []);
     }
 
     /**

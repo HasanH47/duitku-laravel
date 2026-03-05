@@ -34,6 +34,11 @@ Tambahkan kredensial Duitku Anda di file `.env`:
 DUITKU_MERCHANT_CODE=kode_merchant_anda
 DUITKU_API_KEY=api_key_anda
 DUITKU_SANDBOX_MODE=true
+
+# Opsional: HTTP & Logging
+DUITKU_TIMEOUT=30
+DUITKU_RETRY_TIMES=0
+DUITKU_LOG_CHANNEL=
 ```
 
 ## Cara Penggunaan (Usage)

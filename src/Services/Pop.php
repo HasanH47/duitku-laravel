@@ -3,6 +3,7 @@
 namespace Duitku\Laravel\Services;
 
 use Duitku\Laravel\Concerns\InteractsWithApi;
+use Duitku\Laravel\Data\PaymentFee;
 use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Data\PopResponse;
 use Duitku\Laravel\Data\TransactionStatus;
@@ -83,6 +84,8 @@ class Pop
 
     /**
      * Get Available Payment Methods (POP)
+     *
+     * @return PaymentFee[]
      */
     public function getPaymentMethod(int $amount): array
     {
@@ -108,7 +111,7 @@ class Pop
             $response->throw();
         }
 
-        return $response->json('paymentFee') ?? [];
+        return PaymentFee::fromList($response->json('paymentFee') ?? []);
     }
 
     /**

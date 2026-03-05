@@ -44,7 +44,7 @@ it('can get payment methods', function () {
     $methods = Duitku::paymentMethods(10000);
 
     expect($methods)->toBeArray()
-        ->and($methods[0]['paymentMethod'])->toBe('VC');
+        ->and($methods[0]->paymentMethod)->toBe('VC');
 });
 
 it('can check transaction status', function () {
