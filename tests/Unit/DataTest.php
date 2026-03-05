@@ -133,7 +133,7 @@ it('AccountLink toArray with OVO and Shopee', function () {
     $link = new AccountLink(
         credentialCode: 'ABC-123',
         ovo: OvoDetail::cash(10000),
-        shopee: new ShopeeDetail()
+        shopee: new ShopeeDetail
     );
 
     $arr = $link->toArray();
