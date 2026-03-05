@@ -9,16 +9,20 @@ namespace Duitku\Laravel\Data;
  */
 class ShopeeDetail
 {
+    /**
+     * @param  string  $promo_ids  Kode voucher (max 50 chars)
+     * @param  bool  $useCoin  Gunakan koin Shopee dari akun yang terhubung (khusus payment method SL)
+     */
     public function __construct(
-        public bool $useCoin = false,
-        public string $promoId = ''
+        public string $promo_ids = '',
+        public bool $useCoin = false
     ) {}
 
     public function toArray(): array
     {
         return [
+            'promo_ids' => $this->promo_ids,
             'useCoin' => $this->useCoin,
-            'promoId' => $this->promoId,
         ];
     }
 }
