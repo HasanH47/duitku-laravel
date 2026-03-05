@@ -1,7 +1,7 @@
 # Duitku Laravel SDK
 
 ![Tests](https://github.com/HasanH47/duitku-laravel/workflows/Tests/badge.svg)
-![Static Analysis](https://github.com/HasanH47/duitku-laravel/workflows/Static%20Analysis/badge.svg)
+[![Static Analysis](https://github.com/HasanH47/duitku-laravel/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/HasanH47/duitku-laravel/actions/workflows/static-analysis.yml)
 ![PHP Version](https://img.shields.io/badge/php-%5E8.2-blue)
 ![Laravel Version](https://img.shields.io/badge/laravel-10.x%20%7C%2011.x%20%7C%2012.x-red)
 
