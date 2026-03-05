@@ -1,337 +1,208 @@
-# Duitku Laravel
+# Duitku Laravel SDK
 
 ![Tests](https://github.com/HasanH47/duitku-laravel/workflows/Tests/badge.svg)
 ![Static Analysis](https://github.com/HasanH47/duitku-laravel/workflows/Static%20Analysis/badge.svg)
 ![PHP Version](https://img.shields.io/badge/php-%5E8.2-blue)
 ![Laravel Version](https://img.shields.io/badge/laravel-10.x%20%7C%2011.x%20%7C%2012.x-red)
 
-Package Laravel untuk Duitku Payment Gateway yang **Modern, Typed, dan Teroptimasi untuk Concurrency (Parallel Check)**.
+SDK Laravel **resmi komunitas** untuk [Duitku Payment Gateway](https://www.duitku.com/) — Modern, Typed, dan Production-Ready.
 
-## Fitur Utama
+> **Apa itu SDK ini?**
+> SDK ini adalah "jembatan" antara aplikasi Laravel kamu dan Duitku. Tanpa SDK ini, kamu harus menulis kode HTTP request manual, menghitung signature sendiri, dan mengurus banyak hal teknis. Dengan SDK ini, semua itu sudah diurus — kamu tinggal panggil method-nya saja.
 
-- 🚀 **Cek Status Paralel**: Menggunakan `Http::pool` bawaan Laravel 10+ untuk mengecek status banyak transaksi sekaligus dalam waktu singkat (<1 detik untuk 50+ order).
-- 🔒 **Ketik Ketat (Strictly Typed)**: Tidak ada lagi magic array. Gunakan `PaymentRequest` dan `PaymentResponse` (DTO) agar kodingan lebih aman dan auto-complete jalan.
-- 🛡️ **Auto Signature**: Generate dan validasi signature (MD5/SHA256) otomatis. Tidak perlu pusing hitung hash manual.
-- 🧪 **Testable**: Dibuat dengan Pest PHP dan sangat mudah di-mock menggunakan `Http::fake()` untuk pengujian aplikasi Anda.
+---
 
-## Instalasi
+## ✨ Fitur Utama
+
+| Fitur                     | Penjelasan                                                                                                     |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 🔒 **Typed DTOs**         | Semua request & response pakai object, bukan array mentah. IDE auto-complete jalan, typo ketahuan saat coding. |
+| 🛡️ **Auto Signature**     | Signature MD5/SHA256 digenerate & divalidasi otomatis. Tidak perlu hitung hash manual.                         |
+| 🚀 **Parallel Check**     | Cek status 50+ transaksi dalam <1 detik pakai `Http::pool`.                                                    |
+| 📢 **Event-Driven**       | Handle callback pakai Laravel Events — kode lebih bersih, gampang di-test.                                     |
+| 💸 **Disbursement**       | Transfer dana, cek saldo, verifikasi rekening — semua dari satu SDK.                                           |
+| ⚡ **Duitku POP**         | Integrasi popup pembayaran tanpa redirect halaman.                                                             |
+| 🧪 **Testable**           | Mudah di-mock pakai `Http::fake()`, dibuat dengan Pest PHP.                                                    |
+| 📝 **33 Payment Methods** | Semua metode pembayaran Duitku tersedia sebagai PHP Enum.                                                      |
+
+---
+
+## 🚀 Quick Start (5 Menit)
+
+### Langkah 1: Install
 
 ```bash
 composer require duitku/laravel
 ```
 
-Publish konfigurasi:
+### Langkah 2: Publish Config
 
 ```bash
 php artisan vendor:publish --tag=duitku-config
 ```
 
-## Konfigurasi
+> Perintah ini akan membuat file `config/duitku.php` di project kamu. File ini berisi semua pengaturan yang bisa kamu ubah.
 
-Tambahkan kredensial Duitku Anda di file `.env`:
+### Langkah 3: Setup `.env`
+
+Tambahkan kredensial Duitku kamu. Kredensial ini didapat dari [Dashboard Duitku](https://passport.duitku.com/merchant/Project).
 
 ```env
-DUITKU_MERCHANT_CODE=kode_merchant_anda
-DUITKU_API_KEY=api_key_anda
-DUITKU_SANDBOX_MODE=true
+# Wajib
+DUITKU_MERCHANT_CODE=DXXX            # Merchant Code dari dashboard Duitku
+DUITKU_API_KEY=xxx...xxx              # API Key dari dashboard Duitku
+DUITKU_SANDBOX_MODE=true              # true = testing, false = production
 
-# Opsional: HTTP & Logging
-DUITKU_TIMEOUT=30
-DUITKU_RETRY_TIMES=0
-DUITKU_LOG_CHANNEL=
+# Opsional (untuk Disbursement / Transfer Dana)
+DUITKU_USER_ID=your-user-id
+DUITKU_EMAIL=your-email@example.com
+
+# Opsional (untuk HTTP & Logging)
+DUITKU_TIMEOUT=30                     # Timeout request dalam detik
+DUITKU_RETRY_TIMES=0                  # Jumlah retry jika gagal
+DUITKU_LOG_CHANNEL=                   # Channel log Laravel (kosongkan = tidak log)
 ```
 
-## Cara Penggunaan (Usage)
-
-### 1. Buat Pembayaran (Checkout)
-
-Membuat link pembayaran (Payment URL).
+### Langkah 4: Buat Pembayaran Pertamamu! 🎉
 
 ```php
 use Duitku\Laravel\Facades\Duitku;
 use Duitku\Laravel\Data\PaymentRequest;
 
+// 1. Buat request pembayaran
 $request = new PaymentRequest(
-    amount: 50000,
-    merchantOrderId: 'INV-' . time(),
-    productDetails: 'Topup Game Diamonds',
-    email: 'pelanggan@example.com',
-    paymentMethod: 'VC' // Opsional (Virtual Account, dll)
+    amount: 50000,                              // Nominal pembayaran (dalam Rupiah)
+    merchantOrderId: 'INV-' . time(),           // ID unik untuk order ini
+    productDetails: 'Topup 50 Diamonds',        // Deskripsi produk
+    email: 'pelanggan@example.com',             // Email pelanggan
+    paymentMethod: 'VC'                         // Metode bayar (opsional)
 );
 
+// 2. Kirim ke Duitku → dapat URL pembayaran
 $response = Duitku::checkout($request);
 
+// 3. Arahkan pelanggan ke halaman pembayaran Duitku
 return redirect($response->paymentUrl);
 ```
 
-### 2. Handle Callback (Webhook)
+> **Apa yang terjadi?**
+> Duitku akan membuat "invoice" pembayaran dan memberikan URL. Pelanggan kamu akan diarahkan ke URL tersebut untuk menyelesaikan pembayaran (transfer VA, scan QRIS, dll).
 
-Menangani notifikasi pembayaran dari Duitku.
+---
+
+## 📋 Contoh Fitur Lainnya
+
+### Cek Status Transaksi
 
 ```php
-use Duitku\Laravel\Facades\Duitku;
 use Duitku\Laravel\Support\PaymentCode;
-use Illuminate\Http\Request;
 
-public function handleCallback(Request $request)
-{
-    // Validasi Signature (Cek keaslian data dari Duitku)
-    if (!Duitku::validateCallback($request->all())) {
-        abort(403, 'Invalid Signature');
-    }
-
-    // Proses Order
-    $orderId = $request->merchantOrderId;
-    $status = $request->resultCode; // '00' = Sukses
-
-    if ($status === PaymentCode::SUCCESS) {
-        // Update database: Order Telah Dibayar
-    }
-}
-```
-
-### 3. Cek Status Transaksi (Optimasi Paralel) 🚀
-
-Fitur unggulan paket ini. Cek satu status atau cek banyak sekaligus (Bulk) dengan sangat cepat.
-
-```php
-// Cek Satu Transaksi
 $status = Duitku::checkStatus('INV-123');
 
-// Cek Banyak Transaksi (Pakai Http::pool otomatis)
-$statuses = Duitku::checkStatuses(['INV-123', 'INV-124', 'INV-125']);
-
-foreach ($statuses as $status) {
-    if ($status->statusCode === '00') {
-         echo "Order {$status->merchantOrderId} Sukses";
-    }
+if ($status->statusCode === PaymentCode::SUCCESS) {
+    echo "✅ Sudah dibayar!";
 }
 ```
 
-### 4. Duitku POP (Popup / Snap Integration) ⚡
-
-Metode integrasi menggunakan popup (tidak redirect halaman). Sangat cocok untuk pengalaman pengguna yang lebih mulus.
-
-**Langkah 1: Backend (Dapatkan Reference)**
+### Cek Banyak Transaksi Sekaligus (Parallel) 🚀
 
 ```php
-use Duitku\Laravel\Support\PaymentCode;
+// Cek 100 transaksi dalam < 1 detik!
+$statuses = Duitku::checkStatuses(['INV-001', 'INV-002', 'INV-003']);
 
-$request = new PaymentRequest(
-    amount: 10000,
-    merchantOrderId: 'INV-001',
-    productDetails: 'Test Item',
-    email: 'customer@example.com'
-);
-
-$response = Duitku::pop()->createTransaction($request);
-
-echo $response->reference; // Gunakan ini di frontend JS
+foreach ($statuses as $status) {
+    echo "{$status->merchantOrderId}: {$status->statusCode}";
+}
 ```
 
-**Langkah 2: Frontend (Tampilkan Popup)**
-Anda bisa menggunakan Blade Component untuk cara yang lebih mudah:
-
-```html
-<x-duitku-pop :reference="$response->reference" class="btn-primary">
-  Bayar Sekarang
-</x-duitku-pop>
-```
-
-Atau cara manual:
-
-```html
-<script src="{{ Duitku::pop()->scriptUrl() }}"></script>
-...
-```
-
-### 5. Fitur SDK (Advanced) 🚀
-
-Package ini lebih dari sekadar wrapper API; ini adalah SDK lengkap yang terintegrasi dengan fitur-fitur Laravel.
-
-#### Event-Driven Callback
-
-Alih-alih menulis banyak logic di controller, gunakan Laravel Events. Anda cukup membuat _Listener_ untuk menangkap status pembayaran.
+### Handle Callback (Webhook) dengan Events
 
 ```php
-// 1. Di Controller Anda
-public function callback(Request $request) {
-    // Otomatis validasi signature & dispatch event
-    Duitku::handleCallback($request->all());
-
+// Di Controller — cukup 1 baris!
+public function callback(Request $request)
+{
+    Duitku::handleCallback($request->all()); // Auto validasi + dispatch event
     return response('OK');
 }
 
-// 2. Buat Listener (php artisan make:listener UpdateOrderPaid)
-namespace App\Listeners;
-
-use Duitku\Laravel\Events\DuitkuPaymentReceived;
-
+// Di Listener — tangkap event pembayaran sukses
 class UpdateOrderPaid
 {
-    public function handle(DuitkuPaymentReceived $event): void
+    public function handle(DuitkuPaymentReceived $event)
     {
-        $callback = $event->callback; // DTO CallbackRequest
-
-        // Update database Anda
-        // $order = Order::where('merchantOrderId', $callback->merchantOrderId)->first();
-        // $order->update(['status' => 'paid']);
+        $order = Order::where('id', $event->callback->merchantOrderId)->first();
+        $order->update(['status' => 'paid']);
     }
 }
 ```
 
-_Laravel 10+ otomatis mendeteksi listener ini selama event di type-hint dengan benar._
-
-#### Custom Exceptions
-
-Gunakan `try-catch` untuk menangani error spesifik dari Duitku.
+### Duitku POP (Pembayaran Popup)
 
 ```php
-use Duitku\Laravel\Exceptions\InsufficientFundsException;
+// Backend: dapatkan reference token
+$response = Duitku::pop()->createTransaction($request);
 
-try {
-    Duitku::disbursement()->transfer()->execute(...)->throwIfFailed();
-} catch (InsufficientFundsException $e) {
-    // Handle saldo tidak cukup
-} catch (\Exception $e) {
-    // Handle error lainnya
-}
+// Frontend: tampilkan popup dengan Blade Component
 ```
 
-#### Bulk Bank Inquiry (Disbursement)
-
-Cek puluhan rekening sekaligus secara paralel menggunakan `Http::pool`.
-
-```php
-$infos = [
-    new DisbursementInfo(10000, 'rekening1', '014', 'Gaji'),
-    new DisbursementInfo(20000, 'rekening2', '014', 'Gaji'),
-];
-
-$results = Duitku::disbursement()->transfer()->bulkInquiry($infos);
+```html
+<x-duitku-pop :reference="$response->reference" button-text="Bayar Sekarang" />
 ```
 
-### 6. Disbursement (Transfer Dana / Payout)
-
-Untuk menggunakan fitur Disbursement, tambahkan `DUITKU_USER_ID` dan `DUITKU_EMAIL` di `.env` terlebih dahulu.
-
-**Langkah 1: Bank Inquiry (Cek Rekening Tujuan)**
-Cek dulu apakah rekening tujuan valid dan atas nama siapa.
+### Disbursement (Transfer Dana)
 
 ```php
-use Duitku\Laravel\Facades\Duitku;
-use Duitku\Laravel\Data\DisbursementInfo;
-
-$info = new DisbursementInfo(
-    amountTransfer: 50000,
-    bankAccount: '1234567890',
-    bankCode: '014', // Contoh: BCA
-    purpose: 'Withdrawal'
-);
-
-// Inquiry
+// 1. Verifikasi rekening tujuan
 $inquiry = Duitku::disbursement()->bankInquiry($info);
+echo "Nama: " . $inquiry->accountName;
 
-echo $inquiry->accountName; // "JOHN DOE"
-echo $inquiry->disburseId; // Simpan ID ini untuk langkah eksekusi!
+// 2. Eksekusi transfer
+$transfer = Duitku::disbursement()->transfer(...);
 ```
 
-**Langkah 2: Eksekusi Transfer**
-Setelah nama rekening valid, lakukan transfer menggunakan `disburseId` dari hasil inquiry tadi.
+---
 
-```php
-$transfer = Duitku::disbursement()->transfer(
-    disburseId: $inquiry->disburseId,
-    info: $info,
-    accountName: $inquiry->accountName,
-    custRefNumber: $inquiry->custRefNumber
-);
+## 🗺️ Kapan Pakai API vs POP?
 
-echo $transfer->responseCode; // 00 = Sukses
-```
+|                     | **API (Redirect)**                    | **POP (Popup)**                     |
+| ------------------- | ------------------------------------- | ----------------------------------- |
+| **Cara Kerja**      | Pelanggan diarahkan ke halaman Duitku | Popup muncul di halaman kamu        |
+| **Metode Bayar**    | Bisa pilih satu metode spesifik       | Pelanggan pilih sendiri di popup    |
+| **Cocok Untuk**     | E-commerce, checkout standar          | SaaS, top-up, donasi                |
+| **User Experience** | Redirect → bayar → kembali            | Bayar langsung tanpa pindah halaman |
 
-### 8. Clearing (BIFAST / RTGS / LLG)
+---
 
-Untuk transfer nominal besar atau metode spesifik.
+## 📖 Dokumentasi Lengkap
 
-```php
-$info = new DisbursementInfo(
-    amountTransfer: 50000000, // 50 Juta
-    bankAccount: '1234567890',
-    bankCode: '014',
-    purpose: 'Transfer Besar',
-    type: 'BIFAST' // Opsional: 'RTGS', 'LLG', 'BIFAST'
-);
+Dokumentasi detail tersedia di [VitePress Docs](./docs/guide/introduction.md):
 
-// 1. Inquiry
-$inquiry = Duitku::disbursement()->clearing()->inquiry($info);
+1. [Introduction](./docs/guide/introduction.md) — Kenapa pakai SDK ini
+2. [Installation](./docs/guide/installation.md) — Instalasi step-by-step
+3. [Configuration](./docs/guide/configuration.md) — Semua opsi konfigurasi
+4. [Payments](./docs/guide/usage-payments.md) — Buat pembayaran dengan typed DTOs
+5. [Duitku POP](./docs/guide/usage-pop.md) — Integrasi popup
+6. [Callback System](./docs/guide/callback-system.md) — Handle webhook
+7. [Error Handling](./docs/guide/error-handling.md) — Exception & error codes
+8. [Disbursement](./docs/guide/usage-disbursement.md) — Transfer dana
+9. [Blade Components](./docs/guide/blade-components.md) — UI components
 
-// 2. Eksekusi
-$transfer = Duitku::disbursement()->clearing()->execute(
-    disburseId: $inquiry->disburseId,
-    info: $info,
-    accountName: $inquiry->accountName,
-    custRefNumber: $inquiry->custRefNumber
-);
-```
+---
 
-### 9. Cash Out (Tarik Tunai via Retail)
-
-Tarik tunai lewat Indomaret atau Pos Indonesia.
-
-```php
-use Duitku\Laravel\Data\CashOutInfo;
-
-$info = new CashOutInfo(
-    amountTransfer: 50000,
-    bankCode: '2010', // 2010 = Indomaret, 2011 = Pos
-    accountName: 'John Doe',
-    accountIdentity: '350...', // No KTP (Wajib)
-    phoneNumber: '08123...'   // No HP
-);
-
-$response = Duitku::disbursement()->cashOut()->inquiry($info);
-
-// Berikan token ini ke kasir
-echo $response->token;
-```
-
-### 10. Fitur Finance (Cek Status, Saldo, List Bank)
-
-Menggunakan helper `DisbursementCode` agar pengecekan status lebih rapi.
-
-```php
-use Duitku\Laravel\Support\DisbursementCode;
-
-// Cek Status Transaksi Disbursement
-$status = Duitku::disbursement()->finance()->status('DISB-1001');
-
-if ($status->responseCode === DisbursementCode::SUCCESS) {
-    echo "Transaksi Berhasil!";
-} elseif ($status->responseCode === DisbursementCode::INSUFFICIENT_FUNDS) {
-    echo "Saldo Merchant Tidak Cukup";
-}
-
-// Cek Saldo Merchant
-$balance = Duitku::disbursement()->finance()->balance();
-echo "Saldo: " . number_format($balance->balance);
-echo "Efektif: " . number_format($balance->effectiveBalance);
-
-// Lihat Daftar Bank yang Tersedia
-$banks = Duitku::disbursement()->finance()->listBank();
-foreach ($banks as $bank) {
-    echo $bank['bankName'] . ' (' . $bank['bankCode'] . ')';
-}
-```
-
-## Testing
-
-Jalankan test suite untuk memastikan integrasi berjalan lancar:
+## 🧪 Testing
 
 ```bash
+# Jalankan semua test
 composer test
+
+# Static analysis
+./vendor/bin/phpstan analyse
 ```
 
-## Lisensi
+## 🤝 Contributing
 
-MIT
+Contributions are welcome! Silakan buka Issue atau Pull Request.
+
+## 📄 Lisensi
+
+MIT License — lihat file [LICENSE](LICENSE) untuk detail.
