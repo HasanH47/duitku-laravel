@@ -2,6 +2,8 @@
 
 Selamat datang di dokumentasi **Duitku Laravel SDK**! 🎉
 
+Package ini dikembangkan secara independen oleh komunitas. Package ini bukan SDK resmi dan tidak berafiliasi atau mendapat endorsement dari Duitku. Baca [cakupan kompatibilitas](/compatibility) untuk membedakan fitur yang tersedia di kode, alur yang sudah lolos sandbox, dan hal yang belum diverifikasi.
+
 Halaman ini menjelaskan **apa itu SDK ini**, **kenapa kamu membutuhkannya**, dan **apa saja yang bisa kamu lakukan** dengannya.
 
 ---

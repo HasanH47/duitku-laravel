@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Clarify the unofficial community status in the README, docs, and Packagist metadata; add a compatibility matrix with explicit sandbox verification limits.
 - Add weekly monitoring for seven official Duitku documentation/SDK sources, with a reviewed baseline, comparison artifacts, and one reusable GitHub tracking issue.
 - Add versioned documentation navigation with the v2.0.0 documentation preserved as an archive, its install command pinned to v2, and v3.x marked as current.
 - Add CODEOWNERS, contribution/security/support/release policies, a Code of Conduct, and GitHub issue/PR templates.

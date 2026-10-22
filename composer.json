@@ -1,8 +1,13 @@
 {
   "name": "duitku/laravel",
-  "description": "Duitku Payment Gateway for Laravel",
+  "description": "Unofficial community-maintained Laravel integration for the Duitku Payment Gateway",
   "type": "library",
   "license": "MIT",
+  "keywords": [
+    "duitku",
+    "laravel",
+    "payment-gateway"
+  ],
   "authors": [
     {
       "name": "Hasan H",

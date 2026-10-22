@@ -63,6 +63,7 @@ export default defineConfig({
             { text: "Diagnosis dan Testing", link: "/guide/testing" },
             { text: "Pemantauan Duitku", link: "/guide/maintenance" },
             { text: "Versi dokumentasi", link: "/guide/versions" },
+            { text: "Kompatibilitas", link: "/compatibility" },
             { text: "Error Handling", link: "/guide/error-handling" },
             { text: "Blade Components", link: "/guide/blade-components" },
           ],

@@ -7,6 +7,8 @@
 
 SDK komunitas untuk mengintegrasikan [Duitku Payment Gateway](https://www.duitku.com/) dengan Laravel 12–13.
 
+> **Status:** Ini proyek komunitas independen, bukan produk resmi, afiliasi, atau endorsement dari Duitku. Lihat [cakupan kompatibilitas dan hasil pengujian](docs/compatibility.md) sebelum mengandalkan fitur atau channel tertentu.
+
 > Seri v3 membawa perubahan breaking. Baca [panduan migrasi](docs/guide/upgrading.md) dan [changelog](CHANGELOG.md) sebelum memperbarui instalasi lama: signature default sekarang HMAC-SHA256, callback memverifikasi status provider, dan hasil batch memakai `BatchResult`.
 
 > **Apa itu SDK ini?**
@@ -187,7 +189,7 @@ $transfer = Duitku::disbursement()->transfer()->execute(
 
 ## 📖 Dokumentasi Lengkap
 
-Dokumentasi detail tersedia di [VitePress Docs](./docs/guide/introduction.md):
+Dokumentasi detail tersedia di [VitePress Docs](./docs/guide/introduction.md), termasuk [cakupan kompatibilitas dan hasil verifikasi](./docs/compatibility.md):
 
 1. [Introduction](./docs/guide/introduction.md) — Kenapa pakai SDK ini
 2. [Installation](./docs/guide/installation.md) — Instalasi step-by-step

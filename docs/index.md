@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Duitku Laravel"
   text: "Professional Payment SDK"
-  tagline: "Dokumentasi Duitku Laravel v3.x. Pilih versi yang sesuai dengan package yang kamu gunakan."
+  tagline: "Integrasi komunitas independen untuk Duitku. Dokumentasi v3.x; pilih versi yang sesuai dengan package kamu."
   image:
     src: /logo.png
     alt: Duitku Laravel
@@ -34,3 +34,5 @@ features:
     title: Blade Components
     details: Pasang widget Duitku POP secepat kilat dengan Blade Component bawaan.
 ---
+
+Package ini bukan SDK resmi dan tidak berafiliasi atau mendapat endorsement dari Duitku. Lihat [cakupan kompatibilitas](/compatibility) dan [hasil verifikasi sandbox](./reviews/2026-10-22-sandbox).
