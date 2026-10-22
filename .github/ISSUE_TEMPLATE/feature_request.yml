@@ -1,0 +1,22 @@
+name: Feature request
+description: Usulkan kebutuhan integrasi atau peningkatan SDK.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Kebutuhan yang belum terpenuhi
+      description: Jelaskan skenario pengguna dan dampaknya.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Perilaku yang diusulkan
+      description: Sertakan contoh API yang diinginkan dan alternatif yang sudah dipertimbangkan.
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Acuan provider dan kompatibilitas
+      description: Tautan dokumentasi resmi, prasyarat aktivasi merchant, serta potensi perubahan breaking. Jangan menyertakan secret.

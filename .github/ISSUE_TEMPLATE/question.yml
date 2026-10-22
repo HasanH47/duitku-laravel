@@ -1,0 +1,17 @@
+name: Pertanyaan integrasi
+description: Minta bantuan penggunaan SDK.
+body:
+  - type: input
+    id: versions
+    attributes:
+      label: Versi lingkungan
+      placeholder: duitku/laravel 3.0.0, Laravel 13, PHP 8.4
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Pertanyaan dan konteks
+      description: Jelaskan tujuan, langkah yang sudah dicoba, dan dokumentasi yang sudah dibaca. Gunakan data sintetis tanpa API key, signature, atau data pelanggan.
+    validations:
+      required: true

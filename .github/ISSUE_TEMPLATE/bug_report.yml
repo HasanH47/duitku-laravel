@@ -1,0 +1,50 @@
+name: Bug report
+description: Laporkan perilaku SDK yang dapat direproduksi.
+body:
+  - type: markdown
+    attributes:
+      value: Jangan sertakan API key, signature, payload callback asli, atau data pelanggan. Untuk kerentanan, gunakan jalur privat di SECURITY.md.
+  - type: input
+    id: versions
+    attributes:
+      label: Versi lingkungan
+      description: Versi package, Laravel, dan PHP.
+      placeholder: duitku/laravel 3.0.0, Laravel 13, PHP 8.4
+    validations:
+      required: true
+  - type: dropdown
+    id: integration
+    attributes:
+      label: Integrasi yang terdampak
+      options:
+        - Payment API
+        - POP / Blade
+        - Callback / Events
+        - Disbursement
+        - Diagnosis / Testing
+        - Documentation / Tooling
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduksi minimal
+      description: Langkah dan potongan kode memakai data sintetis; gunakan Http::fake() bila memungkinkan.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Hasil yang diharapkan dan terjadi
+      description: Sertakan error yang sudah disamarkan dan kondisi sandbox/production jika relevan.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Sebelum mengirim
+      options:
+        - label: Saya sudah memeriksa dokumentasi dan issue yang ada.
+          required: true
+        - label: Laporan ini memakai data sintetis dan tidak menyertakan kredensial, signature asli, atau data pelanggan.
+          required: true

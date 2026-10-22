@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add CODEOWNERS, contribution/security/support/release policies, a Code of Conduct, and GitHub issue/PR templates.
+
 ## 3.0.0 — 2026-10-22
 
 Laravel 12–13 support, payment verification hardening, and Laravel testing tools. This is a breaking upgrade from v2; follow the [migration guide](docs/guide/upgrading.md).

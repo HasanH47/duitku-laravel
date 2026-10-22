@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Laporan keamanan privat
+    url: https://github.com/HasanH47/duitku-laravel/blob/main/SECURITY.md
+    about: Baca jalur pelaporan kerentanan; jangan publikasikan secret atau detail eksploitasi.
+  - name: Dokumentasi dan panduan migrasi
+    url: https://github.com/HasanH47/duitku-laravel/tree/main/docs/guide
+    about: Panduan integrasi, migrasi v3, diagnosis, dan testing SDK.

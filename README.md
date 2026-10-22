@@ -221,7 +221,7 @@ node tests/js/pop.test.cjs
 
 ## 🤝 Contributing
 
-Contributions are welcome! Silakan buka Issue atau Pull Request.
+Kontribusi bug fix, dokumentasi, test, dan fitur diterima melalui issue atau pull request. Baca [panduan kontribusi](CONTRIBUTING.md), [Code of Conduct](CODE_OF_CONDUCT.md), dan [panduan bantuan](SUPPORT.md). Kerentanan dilaporkan melalui [kebijakan keamanan](SECURITY.md).
 
 ## 📄 Lisensi
 
