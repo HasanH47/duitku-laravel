@@ -50,10 +50,12 @@ Buat invoice pembayaran, arahkan pelanggan ke halaman bayar, dan terima notifika
 - Virtual Account (BCA, Mandiri, BNI, BRI, Permata, dll)
 - E-Wallet (OVO, DANA, ShopeePay, LinkAja)
 - QRIS (ShopeePay, Nobu, dll)
-- Kartu Kredit (Visa, Mastercard, JCB)
+- Kartu Kredit (Visa, Mastercard, JCB) melalui metode checkout invoice Duitku, jika diaktifkan untuk akun merchant
 - Ritel (Indomaret, Alfamart/Pegadaian)
 - Paylater (Indodana, ATOME)
 - E-Commerce (Tokopedia)
+
+Daftar di atas menjelaskan kategori metode checkout, bukan cakupan API kartu langsung. Package ini belum mengimplementasikan Direct Credit Card API seperti token management, capture, void, atau refund. Lihat [matriks kompatibilitas](/compatibility) sebelum memilih alur integrasi.
 
 ### 2. ⚡ Duitku POP (Popup Checkout)
 
