@@ -41,6 +41,8 @@ Perubahan pembayaran perlu mempertimbangkan nominal rupiah, identitas order/refe
 
 ## Mengirim pull request
 
+Perubahan dokumentasi atau SDK resmi Duitku dipantau lewat issue otomatis. Ikuti [panduan pemantauan](docs/guide/maintenance.md) untuk mereview perubahan upstream. Refresh baseline hanya setelah menilai dampaknya dan menjalankan verifikasi yang relevan.
+
 Jelaskan masalah yang diperbaiki dan perilaku akhirnya. Cantumkan validasi yang dijalankan beserta hasilnya, serta pengaruh pada API publik, konfigurasi, dan migrasi. Untuk perubahan dokumentasi saja, jelaskan bahwa pemeriksaan PHP tidak relevan.
 
 Jaga satu PR pada satu tujuan yang dapat direview. Hindari perubahan formatter di file yang tidak terkait, pembaruan dependency di luar cakupan, atau klaim performa tanpa pengukuran. Dokumentasikan perilaku yang berubah dan tambahkan catatan pada bagian Unreleased di [changelog](CHANGELOG.md).

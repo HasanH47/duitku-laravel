@@ -1,0 +1,47 @@
+{
+    "schema_version": 1,
+    "sources": {
+        "overview": {
+            "label": "Payment gateway overview",
+            "url": "https://docs.duitku.com/payment-gateway/overview/",
+            "kind": "html",
+            "fingerprint": "ec1f11c88cb9ce06e11774a628df60e476abc832e4304fbab3dc09c308fd24db"
+        },
+        "api": {
+            "label": "Payment API V2",
+            "url": "https://docs.duitku.com/api/id/",
+            "kind": "html",
+            "fingerprint": "4aeab639e7568264ef4cfaf7ae079d27423e0e9f3acbacffda6dd4f761558a24"
+        },
+        "pop": {
+            "label": "Duitku POP",
+            "url": "https://docs.duitku.com/pop/id/",
+            "kind": "html",
+            "fingerprint": "6f5182b7e4082c4e298174e606fe96d5e7eb095467e93c53637aa341a2252894"
+        },
+        "disbursement": {
+            "label": "Disbursement",
+            "url": "https://docs.duitku.com/disbursement/id/",
+            "kind": "html",
+            "fingerprint": "443904d50260d5f222dec4e31adcab0b25d5b0eec202ecf82be91fe7ff39fdd3"
+        },
+        "cards": {
+            "label": "Direct credit card",
+            "url": "https://docs.duitku.com/direct-credit-card/id/",
+            "kind": "html",
+            "fingerprint": "0b2921630ad4ef81bf1a37cde9cc0ae60ae6b1ec29b6d78db8792bb32e7260b7"
+        },
+        "snap": {
+            "label": "SNAP",
+            "url": "https://docs.duitku.com/snap-api/id/",
+            "kind": "html",
+            "fingerprint": "720c846131362eabd09fdd628d5d38e81e63e5d87b8d16c0ffe8d13aef14acd6"
+        },
+        "php-sdk": {
+            "label": "Official PHP SDK",
+            "url": "https://api.github.com/repos/duitkupg/duitku-php/commits?per_page=1",
+            "kind": "github",
+            "fingerprint": "bf182ec52cfad41db826415952364993d5dbb09c"
+        }
+    }
+}

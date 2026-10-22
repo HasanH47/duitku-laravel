@@ -221,6 +221,8 @@ node tests/js/pop.test.cjs
 
 ## 🤝 Contributing
 
+Dependabot memantau dependency, sedangkan workflow mingguan memantau perubahan dokumentasi dan SDK resmi Duitku. Perubahan upstream dilaporkan melalui satu issue terbuka yang terus diperbarui. Baca [panduan pemantauan](docs/guide/maintenance.md) untuk menindaklanjuti perubahan dan memperbarui baseline.
+
 Kontribusi bug fix, dokumentasi, test, dan fitur diterima melalui issue atau pull request. Baca [panduan kontribusi](CONTRIBUTING.md), [Code of Conduct](CODE_OF_CONDUCT.md), dan [panduan bantuan](SUPPORT.md). Kerentanan dilaporkan melalui [kebijakan keamanan](SECURITY.md).
 
 ## 📄 Lisensi

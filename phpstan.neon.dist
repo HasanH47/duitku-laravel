@@ -5,6 +5,7 @@ parameters:
     paths:
         - src
         - config
+        - tools
 
     # The level 5 is the value we aim for.
     level: 5

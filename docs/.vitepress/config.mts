@@ -36,6 +36,7 @@ export default defineConfig({
         items: [
           { text: "Callback System", link: "/guide/callback-system" },
           { text: "Diagnosis dan Testing", link: "/guide/testing" },
+          { text: "Pemantauan Duitku", link: "/guide/maintenance" },
           { text: "Error Handling", link: "/guide/error-handling" },
           { text: "Blade Components", link: "/guide/blade-components" },
         ],
