@@ -5,7 +5,7 @@ layout: home
 hero:
   name: "Duitku Laravel"
   text: "Professional Payment SDK"
-  tagline: "Integrasikan Duitku ke aplikasi Laravel Anda dengan cara yang lebih elegan, modern, dan event-driven."
+  tagline: "Dokumentasi Duitku Laravel v3.x. Pilih versi yang sesuai dengan package yang kamu gunakan."
   image:
     src: /logo.png
     alt: Duitku Laravel
@@ -13,6 +13,9 @@ hero:
     - theme: brand
       text: Get Started
       link: /guide/introduction
+    - theme: alt
+      text: "Dokumentasi v2 (arsip)"
+      link: /v2/
     - theme: alt
       text: View on GitHub
       link: https://github.com/HasanH47/duitku-laravel

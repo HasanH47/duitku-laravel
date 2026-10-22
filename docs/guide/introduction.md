@@ -99,7 +99,7 @@ Berikut alur dari pelanggan klik "Bayar" sampai kamu terima uang:
 
 Sebelum mulai, pastikan kamu punya:
 
-- [ ] **PHP 8.2+** dan **Laravel 10/11/12**
+- [ ] **Laravel 12** pada PHP 8.2+, atau **Laravel 13** pada PHP 8.3+
 - [ ] **Akun Duitku** — [Daftar di sini](https://passport.duitku.com/merchant/Register) (gratis)
 - [ ] **Merchant Code** dan **API Key** — dapat dari [Dashboard Duitku](https://passport.duitku.com/merchant/Project)
 - [ ] **Composer** terinstal di komputer kamu

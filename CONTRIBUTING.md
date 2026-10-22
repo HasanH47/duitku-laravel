@@ -29,6 +29,8 @@ npm ci
 npm run docs:build
 ```
 
+Dokumentasi untuk versi aktif ada di `docs/`. Dokumentasi major lama disimpan di `docs/vN/` sebagai snapshot dari rilis terakhir major tersebut. Pertahankan banner arsip dan pin perintah instalasinya ke major yang sesuai. Jangan memperbarui contoh arsip agar menyerupai versi baru; arahkan pengguna ke versi aktif untuk perilaku terbaru. Untuk rilis major berikutnya, salin dokumen aktif ke folder versi sebelum memperbarui dokumentasi utama, lalu perbarui dropdown navigasi dan [panduan versi](docs/guide/versions.md).
+
 ## Mengubah perilaku SDK
 
 Tambahkan test pada boundary yang berubah: DTO/signature di unit test, integrasi service/provider/event di feature test, dan adapter POP di test JavaScript. Reproduksi bug sebelum perbaikan bila memungkinkan. Gunakan input sintetis dan kontrol waktu untuk kasus yang bergantung pada timestamp.
