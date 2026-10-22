@@ -3,12 +3,11 @@
 namespace Duitku\Laravel\Services\Disbursement;
 
 use Duitku\Laravel\Concerns\InteractsWithApi;
+use Duitku\Laravel\Data\BatchResult;
 use Duitku\Laravel\Data\DisbursementInfo;
 use Duitku\Laravel\Data\DisbursementResponse;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Support\DuitkuConfig;
-use Illuminate\Http\Client\Pool;
-use Illuminate\Support\Facades\Http;
 
 class Transfer
 {
@@ -52,13 +51,13 @@ class Transfer
             ? '/webapi/api/disbursement/inquirysandbox'
             : '/webapi/api/disbursement/inquiry';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest()->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        return DisbursementResponse::fromArray($response->json());
+        return DisbursementResponse::fromArray($this->client->json($response));
     }
 
     /**
@@ -101,66 +100,51 @@ class Transfer
             ? '/webapi/api/disbursement/transfersandbox'
             : '/webapi/api/disbursement/transfer';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest()->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        return DisbursementResponse::fromArray($response->json());
+        return DisbursementResponse::fromArray($this->client->json($response));
     }
 
     /**
-     * Bulk Bank Inquiry (Parallel)
-     * Useful for checking multiple accounts before mass payouts.
-     *
-     * @param  DisbursementInfo[]  $infos
-     * @return DisbursementResponse[]
+     * @param  list<DisbursementInfo>  $infos
+     * @return list<BatchResult>
      */
     public function bulkInquiry(array $infos): array
     {
-        $responses = Http::pool(function (Pool $pool) use ($infos) {
-            $requests = [];
-            foreach ($infos as $info) {
-                $timestamp = $this->getTimestamp();
+        $requests = [];
 
-                $signatureParams =
-                    $this->config->getEmail().
-                    $timestamp.
-                    $info->bankCode.
-                    $info->bankAccount.
-                    $info->amountTransfer.
-                    $info->purpose.
-                    $this->config->getApiKey();
+        foreach ($infos as $index => $info) {
+            $timestamp = $this->getTimestamp();
+            $signature = $this->generateSignature(
+                $this->config->getEmail().$timestamp.$info->bankCode.
+                $info->bankAccount.$info->amountTransfer.$info->purpose.$this->config->getApiKey(),
+                'sha256',
+            );
 
-                $signature = $this->generateSignature($signatureParams, 'sha256');
-
-                $payload = array_merge($info->toArray(), [
+            $requests[] = [
+                'key' => (string) $index,
+                'payload' => array_merge($info->toArray(), [
                     'userId' => (int) $this->config->getUserId(),
                     'email' => $this->config->getEmail(),
                     'timestamp' => $timestamp,
                     'signature' => $signature,
-                ]);
+                ]),
+            ];
+        }
 
-                $url = $this->config->getPassportHost().($this->config->isSandbox()
-                    ? '/webapi/api/disbursement/inquirysandbox'
-                    : '/webapi/api/disbursement/inquiry');
+        $endpoint = $this->config->isSandbox()
+            ? '/webapi/api/disbursement/inquirysandbox'
+            : '/webapi/api/disbursement/inquiry';
 
-                $requests[] = $pool->post($url, $payload);
-            }
-
-            return $requests;
-        });
-
-        return array_map(function ($response) {
-            if ($response instanceof \Exception) {
-                return new DisbursementResponse(
-                    responseCode: 'EE',
-                    responseDesc: 'Request failed: '.$response->getMessage()
-                );
-            }
-
-            return DisbursementResponse::fromArray($response->json());
-        }, $responses);
+        return $this->client->batch(
+            $endpoint,
+            $requests,
+            fn (array $data) => DisbursementResponse::fromArray($data)->throwIfFailed(),
+            disbursement: true,
+        );
     }
 }

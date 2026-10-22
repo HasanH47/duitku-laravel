@@ -171,14 +171,14 @@ it('CreditCardDetail toArray with all fields', function () {
     $cc = new CreditCardDetail(
         acquirer: '014',
         binWhitelist: ['014', '022', '400000'],
-        saveCardToken: true
+        saveCardToken: 1
     );
 
     $arr = $cc->toArray();
 
     expect($arr['acquirer'])->toBe('014')
         ->and($arr['binWhitelist'])->toBe(['014', '022', '400000'])
-        ->and($arr['saveCardToken'])->toBeTrue();
+        ->and($arr['saveCardToken'])->toBe(1);
 });
 
 // =========================================================================

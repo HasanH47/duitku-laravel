@@ -3,21 +3,22 @@
 use Duitku\Laravel\Facades\Duitku;
 
 /**
- * Example: Concurrent Status Checks using Laravel Http::pool
- * This is significantly faster for bulk checks.
+ * Example: Bounded asynchronous status checks
+ * Each input produces a value or an explicit error.
  */
 $orderIds = ['ORD-001', 'ORD-002', 'ORD-003', 'ORD-004', 'ORD-005'];
 
 $startTime = microtime(true);
 
-// This sends all requests in parallel!
+// Requests run in bounded chunks using the configured concurrency.
 $statuses = Duitku::checkStatuses($orderIds);
 
 $endTime = microtime(true);
 $duration = $endTime - $startTime;
 
-foreach ($statuses as $status) {
-    if ($status) {
+foreach ($statuses as $result) {
+    if ($result->successful()) {
+        $status = $result->get();
         echo "Order: {$status->merchantOrderId} - Status: {$status->statusCode}\n";
     } else {
         echo "Failed to check status for an order.\n";

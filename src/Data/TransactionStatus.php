@@ -2,6 +2,8 @@
 
 namespace Duitku\Laravel\Data;
 
+use Duitku\Laravel\Support\ResponseValidator;
+
 class TransactionStatus
 {
     public function __construct(
@@ -15,10 +17,18 @@ class TransactionStatus
 
     public static function fromArray(array $data): self
     {
+        ResponseValidator::validate($data, [
+            'merchantOrderId' => ['required', 'string'],
+            'reference' => ['required', 'string'],
+            'amount' => ['required', 'integer', 'min:1'],
+            'statusCode' => ['required', 'string', 'in:00,01,02'],
+            'statusMessage' => ['required', 'string'],
+        ], 'transaction status');
+
         return new self(
             merchantOrderId: $data['merchantOrderId'] ?? '',
             reference: $data['reference'] ?? '',
-            amount: $data['amount'] ?? '0',
+            amount: (string) $data['amount'],
             statusCode: $data['statusCode'] ?? '',
             statusMessage: $data['statusMessage'] ?? '',
             fee: $data['fee'] ?? null

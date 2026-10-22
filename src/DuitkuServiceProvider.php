@@ -2,12 +2,12 @@
 
 namespace Duitku\Laravel;
 
+use Duitku\Laravel\Components\Pop;
 use Duitku\Laravel\Support\DuitkuConfig;
-use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 
-class DuitkuServiceProvider extends ServiceProvider implements DeferrableProvider
+class DuitkuServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any application services.
@@ -18,11 +18,15 @@ class DuitkuServiceProvider extends ServiceProvider implements DeferrableProvide
             $this->publishes([
                 __DIR__.'/../config/duitku.php' => config_path('duitku.php'),
             ], 'duitku-config');
+
+            $this->publishes([
+                __DIR__.'/../resources/js' => public_path('vendor/duitku'),
+            ], 'duitku-assets');
         }
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'duitku');
 
-        Blade::component('duitku-pop', \Duitku\Laravel\Components\Pop::class);
+        Blade::component('duitku-pop', Pop::class);
     }
 
     /**

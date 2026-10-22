@@ -3,9 +3,11 @@
 [![Tests](https://github.com/HasanH47/duitku-laravel/actions/workflows/tests.yml/badge.svg)](https://github.com/HasanH47/duitku-laravel/actions/workflows/tests.yml)
 [![Static Analysis](https://github.com/HasanH47/duitku-laravel/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/HasanH47/duitku-laravel/actions/workflows/static-analysis.yml)
 ![PHP Version](https://img.shields.io/badge/php-%5E8.2-blue)
-![Laravel Version](https://img.shields.io/badge/laravel-10.x%20%7C%2011.x%20%7C%2012.x-red)
+![Laravel Version](https://img.shields.io/badge/laravel-12.x%20%7C%2013.x-red)
 
-SDK Laravel **resmi komunitas** untuk [Duitku Payment Gateway](https://www.duitku.com/) — Modern, Typed, dan Production-Ready.
+SDK komunitas untuk mengintegrasikan [Duitku Payment Gateway](https://www.duitku.com/) dengan Laravel 12–13.
+
+> Branch ini menyiapkan rilis major berikutnya. Baca [panduan migrasi](docs/guide/upgrading.md) sebelum memperbarui instalasi lama: signature default sekarang HMAC-SHA256, callback memverifikasi status provider, dan hasil batch memakai `BatchResult`.
 
 > **Apa itu SDK ini?**
 > SDK ini adalah "jembatan" antara aplikasi Laravel kamu dan Duitku. Tanpa SDK ini, kamu harus menulis kode HTTP request manual, menghitung signature sendiri, dan mengurus banyak hal teknis. Dengan SDK ini, semua itu sudah diurus — kamu tinggal panggil method-nya saja.
@@ -17,13 +19,13 @@ SDK Laravel **resmi komunitas** untuk [Duitku Payment Gateway](https://www.duitk
 | Fitur                     | Penjelasan                                                                                                     |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | 🔒 **Typed DTOs**         | Semua request & response pakai object, bukan array mentah. IDE auto-complete jalan, typo ketahuan saat coding. |
-| 🛡️ **Auto Signature**     | Signature MD5/SHA256 digenerate & divalidasi otomatis. Tidak perlu hitung hash manual.                         |
-| 🚀 **Parallel Check**     | Cek status 50+ transaksi dalam <1 detik pakai `Http::pool`.                                                    |
+| 🛡️ **Auto Signature**     | HMAC-SHA256 untuk pembayaran dan POP; protokol disbursement tetap terpisah. |
+| 🚀 **Parallel Check**     | Request async dengan concurrency terbatas dan hasil/error per input. |
 | 📢 **Event-Driven**       | Handle callback pakai Laravel Events — kode lebih bersih, gampang di-test.                                     |
 | 💸 **Disbursement**       | Transfer dana, cek saldo, verifikasi rekening — semua dari satu SDK.                                           |
 | ⚡ **Duitku POP**         | Integrasi popup pembayaran tanpa redirect halaman.                                                             |
 | 🧪 **Testable**           | Mudah di-mock pakai `Http::fake()`, dibuat dengan Pest PHP.                                                    |
-| 📝 **33 Payment Methods** | Semua metode pembayaran Duitku tersedia sebagai PHP Enum.                                                      |
+| 📝 **Payment Method Enum** | Gunakan `PaymentMethod::active()` dan daftar metode dari API untuk pilihan yang tersedia. |
 
 ---
 
@@ -39,6 +41,8 @@ composer require duitku/laravel
 
 ```bash
 php artisan vendor:publish --tag=duitku-config
+# Jika menggunakan Blade component POP:
+php artisan vendor:publish --tag=duitku-assets
 ```
 
 > Perintah ini akan membuat file `config/duitku.php` di project kamu. File ini berisi semua pengaturan yang bisa kamu ubah.
@@ -47,7 +51,7 @@ php artisan vendor:publish --tag=duitku-config
 
 Tambahkan kredensial Duitku kamu. Kredensial ini didapat dari [Dashboard Duitku](https://passport.duitku.com/merchant/Project).
 
-```env
+```dotenv
 # Wajib
 DUITKU_MERCHANT_CODE=DXXX            # Merchant Code dari dashboard Duitku
 DUITKU_API_KEY=xxx...xxx              # API Key dari dashboard Duitku
@@ -75,7 +79,10 @@ $request = new PaymentRequest(
     merchantOrderId: 'INV-' . time(),           // ID unik untuk order ini
     productDetails: 'Topup 50 Diamonds',        // Deskripsi produk
     email: 'pelanggan@example.com',             // Email pelanggan
-    paymentMethod: 'VC'                         // Metode bayar (opsional)
+    paymentMethod: 'BC',                        // Wajib untuk API checkout; opsional pada POP
+    customerVaName: 'Pelanggan',
+    callbackUrl: route('duitku.callback'),
+    returnUrl: route('checkout.return'),
 );
 
 // 2. Kirim ke Duitku → dapat URL pembayaran
@@ -107,11 +114,16 @@ if ($status->statusCode === PaymentCode::SUCCESS) {
 ### Cek Banyak Transaksi Sekaligus (Parallel) 🚀
 
 ```php
-// Cek 100 transaksi dalam < 1 detik!
+// Maksimum 5 request aktif secara default; waktu selesai bergantung pada provider.
 $statuses = Duitku::checkStatuses(['INV-001', 'INV-002', 'INV-003']);
 
-foreach ($statuses as $status) {
-    echo "{$status->merchantOrderId}: {$status->statusCode}";
+foreach ($statuses as $result) {
+    if ($result->successful()) {
+        $status = $result->get();
+        echo "{$result->key}: {$status->statusCode}";
+    } else {
+        report($result->error);
+    }
 }
 ```
 
@@ -125,16 +137,11 @@ public function callback(Request $request)
     return response('OK');
 }
 
-// Di Listener — tangkap event pembayaran sukses
-class UpdateOrderPaid
-{
-    public function handle(DuitkuPaymentReceived $event)
-    {
-        $order = Order::where('id', $event->callback->merchantOrderId)->first();
-        $order->update(['status' => 'paid']);
-    }
-}
+// Di aplikasi, daftarkan listener idempotent untuk DuitkuPaymentReceived.
+// Contoh lengkap yang diuji tersedia pada tautan di bawah.
 ```
+
+Salin dan sesuaikan [contoh listener idempotent](usage-examples/IdempotentPaymentListener.php) ke aplikasi kamu. Event dapat dikirim lebih dari sekali; SDK tidak menyimpan order atau menjanjikan exactly-once delivery.
 
 ### Duitku POP (Pembayaran Popup)
 
@@ -153,11 +160,16 @@ $response = Duitku::pop()->createTransaction($request);
 
 ```php
 // 1. Verifikasi rekening tujuan
-$inquiry = Duitku::disbursement()->bankInquiry($info);
+$inquiry = Duitku::disbursement()->transfer()->inquiry($info);
 echo "Nama: " . $inquiry->accountName;
 
 // 2. Eksekusi transfer
-$transfer = Duitku::disbursement()->transfer(...);
+$transfer = Duitku::disbursement()->transfer()->execute(
+    disburseId: $inquiry->disburseId,
+    info: $info,
+    accountName: $inquiry->accountName,
+    custRefNumber: $inquiry->custRefNumber,
+);
 ```
 
 ---
@@ -197,6 +209,10 @@ composer test
 
 # Static analysis
 ./vendor/bin/phpstan analyse
+
+# Formatter dan test JavaScript POP
+composer format:check
+node tests/js/pop.test.cjs
 ```
 
 ## 🤝 Contributing

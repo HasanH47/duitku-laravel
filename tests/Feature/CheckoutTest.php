@@ -21,7 +21,10 @@ it('can create a payment invoice', function () {
         merchantOrderId: 'ORDER-001',
         productDetails: 'Test Product',
         email: 'test@example.com',
-        paymentMethod: 'VC'
+        paymentMethod: 'VC',
+        customerVaName: 'Test User',
+        callbackUrl: 'https://merchant.test/callback',
+        returnUrl: 'https://merchant.test/return'
     );
 
     // Act
@@ -70,7 +73,7 @@ it('can validate callback signature', function () {
 
     $amount = 10000;
     $orderId = 'ORD-001';
-    $signature = md5('M123'.$amount.$orderId.'test-key');
+    $signature = hash_hmac('sha256', 'M123'.$amount.$orderId, 'test-key');
 
     $data = [
         'merchantCode' => 'M123',

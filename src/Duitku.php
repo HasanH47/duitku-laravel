@@ -2,7 +2,7 @@
 
 namespace Duitku\Laravel;
 
-use Duitku\Laravel\Concerns\InteractsWithApi;
+use Duitku\Laravel\Data\BatchResult;
 use Duitku\Laravel\Data\CallbackRequest;
 use Duitku\Laravel\Data\PaymentFee;
 use Duitku\Laravel\Data\PaymentRequest;
@@ -11,23 +11,26 @@ use Duitku\Laravel\Data\TransactionStatus;
 use Duitku\Laravel\Events\DuitkuCallbackReceived;
 use Duitku\Laravel\Events\DuitkuPaymentFailed;
 use Duitku\Laravel\Events\DuitkuPaymentReceived;
+use Duitku\Laravel\Exceptions\CallbackMismatchException;
+use Duitku\Laravel\Exceptions\DuitkuApiException;
 use Duitku\Laravel\Exceptions\InvalidSignatureException;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Services\Pop;
 use Duitku\Laravel\Support\DuitkuConfig;
-use Illuminate\Http\Client\Pool;
-use Illuminate\Support\Facades\Http;
+use Duitku\Laravel\Support\PaymentSigner;
+use Duitku\Laravel\Support\ResponseValidator;
+use Illuminate\Support\Facades\Validator;
 
 class Duitku
 {
-    use InteractsWithApi;
+    private Client $client;
 
-    protected Client $client;
+    private PaymentSigner $signer;
 
-    public function __construct(
-        protected DuitkuConfig $config
-    ) {
+    public function __construct(private DuitkuConfig $config)
+    {
         $this->client = new Client($config);
+        $this->signer = new PaymentSigner($config);
     }
 
     public function disbursement(): Disbursement
@@ -40,147 +43,161 @@ class Duitku
         return new Pop($this->config);
     }
 
-    /**
-     * Get Payment Methods
-     * Direct API call without internal caching to allow developer flexibility.
-     *
-     * @return PaymentFee[]
-     */
+    /** @return list<PaymentFee> */
     public function paymentMethods(int $amount): array
     {
-        $datetime = date('Y-m-d H:i:s');
-        $signature = $this->generateSignature(
-            $this->config->getMerchantCode().$amount.$datetime.$this->config->getApiKey(),
-            'sha256'
-        );
+        Validator::make(['amount' => $amount], ['amount' => ['required', 'integer', 'min:1']])->validate();
+        $datetime = now('Asia/Jakarta')->format('Y-m-d H:i:s');
+        $signature = $this->signer->sign($this->config->getMerchantCode().$amount.$datetime, 'sha256');
 
-        $response = $this->client->request()->post('/webapi/api/merchant/paymentmethod/getpaymentmethod', [
-            'merchantCode' => $this->config->getMerchantCode(),
-            'amount' => $amount,
-            'datetime' => $datetime,
-            'signature' => $signature,
-        ]);
+        $response = $this->client->request(retryable: true)
+            ->post('/webapi/api/merchant/paymentmethod/getpaymentmethod', [
+                'merchantcode' => $this->config->getMerchantCode(),
+                'amount' => $amount,
+                'datetime' => $datetime,
+                'signature' => $signature,
+            ]);
 
-        return PaymentFee::fromList($response->json('paymentFee') ?? []);
+        $data = $this->client->json($response);
+
+        if (isset($data['responseCode']) && (string) $data['responseCode'] !== '00') {
+            throw new DuitkuApiException('Duitku rejected the payment method request.', (string) $data['responseCode']);
+        }
+
+        ResponseValidator::validate($data, ['paymentFee' => ['present', 'array']], 'payment methods');
+
+        return PaymentFee::fromList($data['paymentFee']);
     }
 
-    /**
-     * Create a Duitku Invoice/Payment
-     */
     public function checkout(PaymentRequest $request): PaymentResponse
     {
-        $signature = $this->generateSignature(
-            $this->config->getMerchantCode().$request->merchantOrderId.$request->amount.$this->config->getApiKey()
+        $payload = $request->validatedPayload($this->config->getDefaultExpiry());
+        $payload['merchantCode'] = $this->config->getMerchantCode();
+        $payload['signature'] = $this->signer->sign(
+            $payload['merchantCode'].$request->merchantOrderId.$request->amount
         );
-
-        $payload = array_merge($request->toArray(), [
-            'merchantCode' => $this->config->getMerchantCode(),
-            'signature' => $signature,
-        ]);
 
         $response = $this->client->request()->post('/webapi/api/merchant/v2/inquiry', $payload);
 
-        if (! $response->successful()) {
-            $response->throw();
-        }
-
-        return PaymentResponse::fromArray($response->json())->throwIfFailed();
+        return PaymentResponse::fromArray($this->client->json($response))->throwIfFailed();
     }
 
-    /**
-     * Check Single Transaction Status
-     */
     public function checkStatus(string $merchantOrderId): TransactionStatus
     {
-        $signature = $this->generateSignature(
-            $this->config->getMerchantCode().$merchantOrderId.$this->config->getApiKey()
-        );
+        $response = $this->client->request(retryable: true)
+            ->post('/webapi/api/merchant/transactionStatus', $this->statusPayload($merchantOrderId));
 
-        $response = $this->client->request()->post('/webapi/api/merchant/transactionStatus', [
-            'merchantCode' => $this->config->getMerchantCode(),
-            'merchantOrderId' => $merchantOrderId,
-            'signature' => $signature,
-        ]);
-
-        if (! $response->successful()) {
-            $response->throw();
-        }
-
-        return TransactionStatus::fromArray($response->json());
+        return $this->decodeStatus($this->client->json($response), $merchantOrderId);
     }
 
     /**
-     * Check Multiple Transaction Statuses concurrently
-     * This uses Laravel Http::pool for optimization
+     * @param  list<string>  $merchantOrderIds
+     * @return list<BatchResult>
      */
     public function checkStatuses(array $merchantOrderIds): array
     {
-        $responses = Http::pool(function (Pool $pool) use ($merchantOrderIds) {
-            $requests = [];
-            foreach ($merchantOrderIds as $orderId) {
-                $signature = $this->generateSignature(
-                    $this->config->getMerchantCode().$orderId.$this->config->getApiKey()
-                );
+        $requests = [];
 
-                $url = $this->config->getPassportHost().'/webapi/api/merchant/transactionStatus';
+        foreach ($merchantOrderIds as $orderId) {
+            $requests[] = ['key' => $orderId, 'payload' => $this->statusPayload($orderId)];
+        }
 
-                $requests[] = $pool->post($url, [
-                    'merchantCode' => $this->config->getMerchantCode(),
-                    'merchantOrderId' => $orderId,
-                    'signature' => $signature,
-                ]);
-            }
-
-            return $requests;
-        });
-
-        return array_map(function ($response) {
-            if ($response instanceof \Exception) {
-                return null; // Handle failed requests gracefully
-            }
-
-            return TransactionStatus::fromArray($response->json());
-        }, $responses);
+        return $this->client->batch(
+            '/webapi/api/merchant/transactionStatus',
+            $requests,
+            fn (array $data, string $orderId) => $this->decodeStatus($data, $orderId),
+        );
     }
 
-    /**
-     * Validate Callback Signature
-     */
     public function validateCallback(array $data): bool
     {
-        $callback = CallbackRequest::fromArray($data);
+        $this->config->assertPaymentCredentials();
 
-        $generatedSignature = $this->generateSignature(
-            $this->config->getMerchantCode().$callback->amount.$callback->merchantOrderId.$this->config->getApiKey()
-        );
+        $validator = Validator::make($data, [
+            'merchantCode' => ['required', 'string', 'max:50'],
+            'amount' => ['required', 'integer', 'min:1'],
+            'merchantOrderId' => ['required', 'string', 'max:50'],
+            'signature' => ['required', 'string'],
+        ]);
 
-        return $generatedSignature === $callback->signature;
+        if ($validator->fails() || (! is_string($data['amount']) && ! is_int($data['amount']))) {
+            return false;
+        }
+
+        if ($data['merchantCode'] !== $this->config->getMerchantCode()) {
+            return false;
+        }
+
+        $expected = $this->signer->sign($data['merchantCode'].$data['amount'].$data['merchantOrderId']);
+
+        return hash_equals($expected, $data['signature']);
     }
 
-    /**
-     * Handle Callback (SDK Style)
-     * Validates signature, dispatches Laravel events, and throws exceptions.
-     *
-     * @throws InvalidSignatureException
-     */
-    public function handleCallback(array $data): CallbackRequest
+    public function verifyCallback(array $data): CallbackRequest
     {
         if (! $this->validateCallback($data)) {
             throw new InvalidSignatureException('Duitku callback signature validation failed.');
         }
 
+        Validator::make($data, [
+            'resultCode' => ['required', 'string', 'in:00,01,02'],
+            'reference' => ['required', 'string', 'max:255'],
+        ])->validate();
+
         $callback = CallbackRequest::fromArray($data);
 
-        // General event for any validated callback
+        if ($this->config->shouldVerifyCallbackStatus()) {
+            $status = $this->checkStatus($callback->merchantOrderId);
+
+            if ($status->reference !== $callback->reference || (int) $status->amount !== $callback->amount) {
+                throw new CallbackMismatchException('Duitku callback does not match the transaction amount or reference.');
+            }
+
+            $callback->verifiedStatus = $status;
+        }
+
+        return $callback;
+    }
+
+    public function handleCallback(array $data): CallbackRequest
+    {
+        $callback = $this->verifyCallback($data);
+        $statusCode = $callback->verifiedStatus !== null
+            ? $callback->verifiedStatus->statusCode
+            : $callback->resultCode;
+
         event(new DuitkuCallbackReceived($data));
 
-        // Specific payment events
-        if ($callback->resultCode === '00') {
+        if ($statusCode === '00') {
             event(new DuitkuPaymentReceived($callback));
-        } else {
+        } elseif ($statusCode === '02') {
             event(new DuitkuPaymentFailed($callback));
         }
 
         return $callback;
+    }
+
+    private function statusPayload(string $merchantOrderId): array
+    {
+        Validator::make(['orderId' => $merchantOrderId], [
+            'orderId' => ['required', 'string', 'max:50'],
+        ])->validate();
+
+        return [
+            'merchantCode' => $this->config->getMerchantCode(),
+            'merchantOrderId' => $merchantOrderId,
+            'signature' => $this->signer->sign($this->config->getMerchantCode().$merchantOrderId),
+        ];
+    }
+
+    private function decodeStatus(array $data, string $orderId): TransactionStatus
+    {
+        $status = TransactionStatus::fromArray($data);
+
+        if ($status->merchantOrderId !== $orderId) {
+            throw new CallbackMismatchException('Duitku returned a status for a different order.');
+        }
+
+        return $status;
     }
 }

@@ -1,243 +1,69 @@
-# Callback System (Event-Driven)
+# Callback pembayaran
 
-Setelah pelanggan membayar, **bagaimana aplikasi kamu tahu?** Jawabannya: **Callback** (Webhook).
-
----
-
-## 🤔 Apa Itu Callback?
-
-Callback adalah **permintaan HTTP POST** yang dikirim oleh Duitku ke server kamu setelah pelanggan menyelesaikan pembayaran.
-
-> **Analogi:** Bayangkan kamu antar baju ke laundry. Saat baju selesai dicuci, laundry **menelepon** kamu: "Baju sudah selesai!" Callback itu "telepon" dari Duitku ke server kamu.
-
-**Yang terjadi:**
-
-```
-Pelanggan bayar di Duitku
-       ↓
-Duitku kirim HTTP POST ke URL callback kamu
-       ↓
-Server kamu terima data (merchantOrderId, resultCode, dll)
-       ↓
-Aplikasi kamu update database: order = paid
-```
-
-> [!IMPORTANT]
-> Callback dikirim **server-to-server** (backend ke backend). Ini berbeda dengan redirect yang terjadi di browser pelanggan. Callback lebih reliable karena tidak bergantung pada browser pelanggan.
-
----
-
-## 🛡️ Kenapa Harus Validasi Signature?
-
-Siapa saja bisa mengirim HTTP POST ke URL callback kamu — termasuk hacker. Untuk memastikan bahwa data benar-benar dari Duitku (bukan penipu), kamu harus **memvalidasi signature**.
-
-> **Analogi:** Bayangkan ada orang ketuk pintu dan bilang "Paket dari Toko A". Kamu harus cek identitasnya dulu sebelum terima paket. Signature = identitas yang dicek.
-
-SDK ini **otomatis** melakukan validasi signature. Kamu tidak perlu hitung MD5 manual.
-
----
-
-## ⚙️ Setup Route untuk Callback
-
-Pertama, buat route untuk menerima callback. URL ini harus didaftarkan di [Dashboard Duitku](https://passport.duitku.com/merchant/Project).
+Gunakan `handleCallback()` untuk memvalidasi signature, mencocokkan transaksi melalui API status, lalu mengirim event Laravel. Route ini menerima POST server-to-server; redirect dan event browser POP hanya membantu tampilan pelanggan.
 
 ```php
-// routes/api.php
-Route::post('/duitku/callback', [PaymentController::class, 'callback']);
+use Duitku\Laravel\Facades\Duitku;
+use Illuminate\Http\Request;
+
+public function callback(Request $request)
+{
+    Duitku::handleCallback($request->all());
+
+    return response('OK', 200);
+}
 ```
 
-> [!WARNING]
-> **Route callback harus exempt dari CSRF protection!** Karena Duitku mengirim POST request tanpa CSRF token.
-
-Tambahkan URL callback ke exception list di `bootstrap/app.php` (Laravel 11+):
+Daftarkan route bernama `duitku.callback`, lalu kirim URL-nya pada `PaymentRequest::callbackUrl`. Jika route memakai middleware CSRF, kecualikan hanya path callback tersebut di `bootstrap/app.php`. Route pada grup API biasanya tidak memakai middleware CSRF.
 
 ```php
 ->withMiddleware(function (Middleware $middleware) {
-    $middleware->validateCsrfTokens(except: [
-        'duitku/callback',  // Exempt callback Duitku dari CSRF
-    ]);
+    $middleware->validateCsrfTokens(except: ['duitku/callback']);
 })
 ```
 
-Atau di `app/Http/Middleware/VerifyCsrfToken.php` (Laravel 10):
+## Pemeriksaan yang dilakukan SDK
+
+SDK menolak kredensial kosong, merchant code berbeda, nominal malformed, signature salah, dan callback tanpa reference/result code. HMAC dihitung dari merchant code, amount asli, dan merchant order ID menggunakan API key sebagai key. Metadata seperti `resultCode` tidak termasuk pesan yang ditandatangani provider.
+
+Secara default, SDK memanggil status API sebelum mengirim event. Order ID, nominal, serta reference harus sesuai dengan callback. Status dari API menentukan event; callback yang mengaku sukses tidak mengalahkan status provider yang masih pending atau gagal.
+
+| Event | Kondisi |
+| --- | --- |
+| `DuitkuCallbackReceived` | Callback lolos seluruh pemeriksaan yang diaktifkan |
+| `DuitkuPaymentReceived` | Status terverifikasi `00` |
+| `DuitkuPaymentFailed` | Status terverifikasi `02` |
+
+Status `01` hanya mengirim event umum. `CallbackRequest::resultCode` menyimpan nilai laporan callback asli; gunakan `verifiedStatus->statusCode` untuk hasil verifikasi provider. Data asli tersedia pada `raw`, termasuk field provider yang belum memiliki properti DTO.
 
 ```php
-protected $except = [
-    'duitku/callback',
-];
+$callback = Duitku::verifyCallback($request->all()); // Pemeriksaan yang sama, tanpa event
+$callback->verifiedStatus; // TransactionStatus, atau null jika pemeriksaan status dimatikan
+$callback->customerName;   // Metadata issuer bila dikirim provider
 ```
 
----
+`validateCallback()` hanya memeriksa identitas dan signature. Method itu tidak memverifikasi status pembayaran, order aplikasi, atau deduplikasi.
 
-## Cara 1: Manual (Simple)
+## Listener idempotent
 
-Jika kamu ingin handle sendiri dengan logic sederhana:
+Provider atau aplikasi dapat mengulang callback. SDK tetap stateless dan dapat mengirim event yang sama lagi. Aplikasi harus memproses efek bisnis secara idempotent.
 
-```php
-use Duitku\Laravel\Facades\Duitku;
-use Duitku\Laravel\Support\PaymentCode;
-use Illuminate\Http\Request;
+Gunakan [contoh listener yang diuji](https://github.com/HasanH47/duitku-laravel/blob/main/usage-examples/IdempotentPaymentListener.php) sebagai dasar. Salin ke namespace aplikasi dan sesuaikan tabelnya. Contoh memakai:
 
-class PaymentController extends Controller
-{
-    public function callback(Request $request)
-    {
-        // 1. Validasi signature (cek keaslian data)
-        if (!Duitku::validateCallback($request->all())) {
-            // Data tidak valid (mungkin palsu) → tolak!
-            abort(403, 'Invalid Signature');
-        }
+- Kolom `merchant_code`, `merchant_order_id`, `amount` dalam rupiah integer, `duitku_reference`, `status`, dan `paid_at`.
+- Unique constraint pada pasangan merchant code dan merchant order ID.
+- Transaksi database dengan row lock, pencocokan nominal/reference, dan pemeriksaan status paid sebelum update.
 
-        // 2. Proses berdasarkan result code
-        $orderId = $request->merchantOrderId;
-        $resultCode = $request->resultCode;
+Simpan reference provider ketika membuat invoice. Jangan mengirim email, pengiriman barang, atau request eksternal dari dalam transaksi database. Bila fulfillment harus bertahan saat proses crash, simpan outbox record dalam transaksi yang sama lalu proses secara idempotent.
 
-        if ($resultCode === PaymentCode::SUCCESS) {
-            // ✅ Pembayaran berhasil → update database
-            Order::where('order_id', $orderId)->update(['status' => 'paid']);
-        } else {
-            // ❌ Pembayaran gagal/expired
-            Order::where('order_id', $orderId)->update(['status' => 'failed']);
-        }
+## Error dan pengulangan
 
-        return response('OK', 200);
-    }
-}
-```
+Jangan membalas 200 sebelum verifikasi dan penyimpanan hasil berhasil. Signature salah menghasilkan `InvalidSignatureException`; shape callback salah menghasilkan `ValidationException`; ketidakcocokan status/order menghasilkan `CallbackMismatchException`. Transport error tetap menggunakan exception HTTP Laravel.
 
----
+Jika pengecekan provider gagal sementara, jangan menganggap order gagal atau paid. Biarkan aplikasi mengembalikan respons gagal sementara dan mengikuti kebijakan pengulangan provider. Pengulangan callback tidak boleh menggandakan efek bisnis.
 
-## Cara 2: Event-Driven (Recommended) ⭐
+## Opsi kompatibilitas
 
-Cara yang lebih **bersih** dan **scalable** adalah menggunakan Laravel Events. Dengan cara ini, controller kamu cuma 1 baris, dan semua logic business ada di Listener terpisah.
+`DUITKU_VERIFY_CALLBACK_STATUS=true` adalah default. Menonaktifkannya membuat `verifiedStatus` bernilai null dan event hanya mengikuti result code callback. Gunakan pilihan itu hanya bila aplikasi menjalankan verifikasi independen sendiri; listener contoh sengaja menolak event yang belum terverifikasi.
 
-### Langkah 1: Di Controller
-
-```php
-use Duitku\Laravel\Facades\Duitku;
-use Illuminate\Http\Request;
-
-class PaymentController extends Controller
-{
-    public function callback(Request $request)
-    {
-        // Satu baris ini melakukan:
-        // 1. Validasi signature ✓
-        // 2. Dispatch event yang sesuai ✓
-        // 3. Throw exception jika signature invalid ✓
-        Duitku::handleCallback($request->all());
-
-        return response('OK', 200);
-    }
-}
-```
-
-> **Kenapa lebih baik?** Controller cukup tipis (1 baris). Logic "apa yang dilakukan setelah bayar" ada di Listener — lebih mudah di-test dan di-maintain.
-
-### Langkah 2: Buat Listener
-
-```bash
-php artisan make:listener UpdateOrderPaid
-```
-
-```php
-// app/Listeners/UpdateOrderPaid.php
-
-namespace App\Listeners;
-
-use App\Models\Order;
-use Duitku\Laravel\Events\DuitkuPaymentReceived;
-
-class UpdateOrderPaid
-{
-    public function handle(DuitkuPaymentReceived $event): void
-    {
-        // Ambil data callback (sudah tervalidasi signature-nya)
-        $callback = $event->callback;
-
-        // Data yang tersedia:
-        // $callback->merchantOrderId  → ID order kamu
-        // $callback->amount           → Nominal pembayaran
-        // $callback->resultCode       → '00' = sukses
-        // $callback->reference        → Reference ID Duitku
-        // $callback->signature        → Signature (sudah divalidasi)
-
-        // Update database
-        $order = Order::where('order_id', $callback->merchantOrderId)->first();
-
-        if ($order) {
-            $order->update([
-                'status' => 'paid',
-                'paid_at' => now(),
-                'duitku_reference' => $callback->reference,
-            ]);
-        }
-    }
-}
-```
-
-### Langkah 3: Daftarkan Listener (Laravel 10)
-
-```php
-// app/Providers/EventServiceProvider.php
-protected $listen = [
-    \Duitku\Laravel\Events\DuitkuPaymentReceived::class => [
-        \App\Listeners\UpdateOrderPaid::class,
-    ],
-    \Duitku\Laravel\Events\DuitkuPaymentFailed::class => [
-        \App\Listeners\HandleFailedPayment::class,
-    ],
-];
-```
-
-> [!TIP]
-> **Laravel 11+** mendukung Event Discovery — listener akan otomatis terdeteksi tanpa perlu didaftarkan, selama event di-type-hint dengan benar di method `handle()`.
-
----
-
-## 📋 Daftar Events yang Tersedia
-
-| Event                    | Kapan Di-dispatch?                                         |
-| ------------------------ | ---------------------------------------------------------- |
-| `DuitkuCallbackReceived` | **Setiap** callback yang valid (baik sukses maupun gagal)  |
-| `DuitkuPaymentReceived`  | Hanya jika `resultCode` = `'00'` (pembayaran **berhasil**) |
-| `DuitkuPaymentFailed`    | Jika `resultCode` ≠ `'00'` (pembayaran **gagal/expired**)  |
-
-**Kapan pakai mana?**
-
-- Gunakan `DuitkuPaymentReceived` untuk update order jadi "paid"
-- Gunakan `DuitkuPaymentFailed` untuk notifikasi admin atau kirim email reminder
-- Gunakan `DuitkuCallbackReceived` untuk logging/audit trail (semua callback)
-
----
-
-## 🧪 Testing Callback di Lokal
-
-Duitku mengirim callback ke URL yang bisa diakses dari internet. Saat development di lokal, server kamu biasanya tidak bisa diakses dari luar. Solusinya:
-
-### Pakai ngrok (Gratis)
-
-```bash
-# 1. Install ngrok: https://ngrok.com
-# 2. Jalankan tunnel ke port Laravel kamu
-ngrok http 8000
-
-# 3. Kamu akan dapat URL seperti:
-# https://abc123.ngrok.io
-
-# 4. Set URL callback di Dashboard Duitku:
-# https://abc123.ngrok.io/api/duitku/callback
-```
-
-### Pakai `expose` (Alternatif)
-
-```bash
-expose share http://localhost:8000
-```
-
-> [!TIP]
-> Jangan lupa update URL callback di Dashboard Duitku setiap kali URL ngrok berubah!
-
----
-
-Selanjutnya, pelajari cara menangani error dengan [Error Handling](./error-handling). 🛡️
+Mode `DUITKU_SIGNATURE_MODE=legacy` tersedia untuk akun yang masih memerlukan protokol lama. Tidak ada fallback otomatis ketika HMAC gagal. Baca [panduan migrasi](./upgrading).

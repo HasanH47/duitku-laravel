@@ -165,7 +165,7 @@ ErrorCode::describeStatus('01', 'redirect');
 
 Set `DUITKU_LOG_CHANNEL` di `.env` untuk mencatat semua request:
 
-```env
+```dotenv
 DUITKU_LOG_CHANNEL=duitku
 ```
 

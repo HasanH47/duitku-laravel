@@ -1,8 +1,10 @@
 <?php
 
+use Duitku\Laravel\Data\CashOutInfo;
 use Duitku\Laravel\Data\DisbursementInfo;
 use Duitku\Laravel\Facades\Duitku;
 use Duitku\Laravel\Support\DisbursementCode;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
@@ -72,6 +74,23 @@ test('transfer execute works', function () {
     );
 
     expect($response->responseCode)->toBe(DisbursementCode::SUCCESS);
+});
+
+test('transfer execution never retries an ambiguous server failure', function () {
+    Config::set('duitku.retry_times', 2);
+    Config::set('duitku.retry_sleep', 0);
+    Http::fake(['*' => Http::sequence()->push(['error' => 'unavailable'], 500)->push([
+        'responseCode' => '00', 'disburseId' => 'DISB-1001',
+    ])]);
+
+    expect(fn () => Duitku::disbursement()->transfer()->execute(
+        'DISB-1001',
+        new DisbursementInfo(50000, '1234567890', '014', 'Test Withdrawal'),
+        'JOHN DOE',
+        'REF-001',
+    ))->toThrow(RequestException::class);
+
+    Http::assertSentCount(1);
 });
 
 test('clearing inquiry generates correct signature', function () {
@@ -151,7 +170,7 @@ test('cash out inquiry generated correct signature', function () {
         ], 200),
     ]);
 
-    $info = new \Duitku\Laravel\Data\CashOutInfo(
+    $info = new CashOutInfo(
         amountTransfer: 100000,
         bankCode: '2010', // Indomaret
         accountName: 'John Doe',

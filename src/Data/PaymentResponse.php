@@ -4,6 +4,7 @@ namespace Duitku\Laravel\Data;
 
 use Duitku\Laravel\Exceptions\DuitkuApiException;
 use Duitku\Laravel\Support\PaymentCode;
+use Duitku\Laravel\Support\ResponseValidator;
 
 class PaymentResponse
 {
@@ -21,6 +22,16 @@ class PaymentResponse
 
     public static function fromArray(array $data): self
     {
+        if (isset($data['statusCode']) && $data['statusCode'] !== PaymentCode::SUCCESS) {
+            throw new DuitkuApiException('Duitku rejected the payment request.', (string) $data['statusCode']);
+        }
+
+        ResponseValidator::validate($data, [
+            'merchantCode' => ['required', 'string'],
+            'reference' => ['required', 'string'],
+            'paymentUrl' => ['required', 'url:http,https'],
+        ], 'payment');
+
         return new self(
             merchantCode: $data['merchantCode'] ?? '',
             reference: $data['reference'] ?? '',
@@ -28,7 +39,7 @@ class PaymentResponse
             statusCode: $data['statusCode'] ?? null,
             statusMessage: $data['statusMessage'] ?? null,
             vaNumber: $data['vaNumber'] ?? null,
-            amount: $data['amount'] ?? null,
+            amount: isset($data['amount']) ? (string) $data['amount'] : null,
             qrString: $data['qrString'] ?? null,
             appUrl: $data['AppUrl'] ?? $data['appUrl'] ?? null
         );
@@ -41,7 +52,7 @@ class PaymentResponse
      */
     public function throwIfFailed(): self
     {
-        if ($this->statusCode === PaymentCode::SUCCESS || empty($this->statusCode)) {
+        if ($this->statusCode === PaymentCode::SUCCESS || $this->statusCode === null) {
             return $this;
         }
 

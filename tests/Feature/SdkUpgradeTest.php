@@ -22,10 +22,12 @@ test('handleCallback dispatches success event and returns data', function () {
         'merchantCode' => 'D1234',
         'amount' => '10000',
         'merchantOrderId' => 'INV-001',
+        'reference' => 'REF-001',
         'resultCode' => '00',
     ];
-    $data['signature'] = md5('D1234'.'10000'.'INV-001'.'test-key');
+    $data['signature'] = hash_hmac('sha256', 'D1234'.'10000'.'INV-001', 'test-key');
 
+    duitkuTestFakeStatus($data, '00');
     $callback = Duitku::handleCallback($data);
 
     expect($callback->merchantOrderId)->toBe('INV-001');
@@ -39,10 +41,12 @@ test('handleCallback dispatches failed event on failure result', function () {
         'merchantCode' => 'D1234',
         'amount' => '10000',
         'merchantOrderId' => 'INV-002',
+        'reference' => 'REF-002',
         'resultCode' => '02',
     ];
-    $data['signature'] = md5('D1234'.'10000'.'INV-002'.'test-key');
+    $data['signature'] = hash_hmac('sha256', 'D1234'.'10000'.'INV-002', 'test-key');
 
+    duitkuTestFakeStatus($data, '02');
     Duitku::handleCallback($data);
 
     Event::assertDispatched(DuitkuPaymentFailed::class);
@@ -53,6 +57,7 @@ test('handleCallback throws exception on invalid signature', function () {
         'merchantCode' => 'D1234',
         'amount' => '10000',
         'merchantOrderId' => 'INV-001',
+        'reference' => 'REF-001',
         'signature' => 'invalid-sig',
     ];
 
@@ -74,8 +79,8 @@ test('bulkInquiry works in parallel', function () {
     $results = Duitku::disbursement()->transfer()->bulkInquiry($infos);
 
     expect($results)->toHaveCount(2)
-        ->and($results[0]->accountName)->toBe('USER A')
-        ->and($results[1]->accountName)->toBe('USER B');
+        ->and($results[0]->get()->accountName)->toBe('USER A')
+        ->and($results[1]->get()->accountName)->toBe('USER B');
 });
 
 test('throwIfFailed throws correct exception for insufficient funds', function () {

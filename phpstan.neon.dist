@@ -8,7 +8,7 @@ parameters:
 
     # The level 5 is the value we aim for.
     level: 5
-
-    ignoreErrors:
-        # Ignore some common false positives if necessary
-        # - '#Unsafe usage of new static#'
+    configDirectories:
+        - config
+    viewDirectories:
+        - resources/views

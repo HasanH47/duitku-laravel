@@ -9,8 +9,8 @@ it('can validate callback signature', function () {
     $amount = 10000;
     $orderId = 'ORDER-SUCCESS';
 
-    // Generate valid signature
-    $signature = md5($merchantCode.$amount.$orderId.$apiKey);
+    // HMAC signs the original callback values, with the API key as the key.
+    $signature = hash_hmac('sha256', $merchantCode.$amount.$orderId, $apiKey);
 
     $payload = [
         'merchantCode' => $merchantCode,

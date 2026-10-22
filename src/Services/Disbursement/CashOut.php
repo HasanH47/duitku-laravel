@@ -47,13 +47,13 @@ class CashOut
 
         $endpoint = $this->config->getDisbursementHost().'/api/cashout/inquiry';
 
-        $response = $this->client->request($this->config->getDisbursementHost())->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest($this->config->getDisbursementHost())->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        return DisbursementResponse::fromArray($response->json());
+        return DisbursementResponse::fromArray($this->client->json($response));
     }
 
     /**
@@ -62,6 +62,7 @@ class CashOut
      */
     public function validateCallback(array $data): bool
     {
+        $this->config->assertDisbursementCredentials();
         $signatureParam =
             $this->config->getEmail().
             ($data['disburseId'] ?? '').
@@ -70,6 +71,6 @@ class CashOut
 
         $generated = $this->generateSignature($signatureParam, 'sha256');
 
-        return $generated === ($data['signature'] ?? '');
+        return is_string($data['signature'] ?? null) && hash_equals($generated, $data['signature']);
     }
 }

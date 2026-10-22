@@ -55,13 +55,13 @@ class Clearing
             ? '/webapi/api/disbursement/inquiryclearingsandbox'
             : '/webapi/api/disbursement/inquiryclearing';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest()->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        return DisbursementResponse::fromArray($response->json());
+        return DisbursementResponse::fromArray($this->client->json($response));
     }
 
     /**
@@ -110,13 +110,13 @@ class Clearing
             ? '/webapi/api/disbursement/transferclearingsandbox'
             : '/webapi/api/disbursement/transferclearing';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest()->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        return DisbursementResponse::fromArray($response->json());
+        return DisbursementResponse::fromArray($this->client->json($response));
     }
 
     /**
@@ -124,6 +124,7 @@ class Clearing
      */
     public function validateCallback(array $data): bool
     {
+        $this->config->assertDisbursementCredentials();
         $signatureParam =
             $this->config->getEmail().
             ($data['bankCode'] ?? '').
@@ -136,6 +137,6 @@ class Clearing
 
         $generated = $this->generateSignature($signatureParam, 'sha256');
 
-        return $generated === ($data['signature'] ?? '');
+        return is_string($data['signature'] ?? null) && hash_equals($generated, $data['signature']);
     }
 }

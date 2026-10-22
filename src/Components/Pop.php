@@ -2,16 +2,18 @@
 
 namespace Duitku\Laravel\Components;
 
+use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 
 class Pop extends Component
 {
     public function __construct(
-        public string $reference
+        public string $reference,
+        public string $buttonText = 'Bayar Sekarang',
     ) {}
 
-    public function render()
+    public function render(): View
     {
-        return view('duitku::components.pop');
+        return $this->view('duitku::components.pop');
     }
 }

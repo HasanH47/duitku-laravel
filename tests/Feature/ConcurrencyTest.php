@@ -16,8 +16,8 @@ it('can check multiple transaction statuses concurrently', function () {
 
     // Assert
     expect($statuses)->toHaveCount(2);
-    expect($statuses[0]->merchantOrderId)->toBe('ORD-1');
-    expect($statuses[1]->merchantOrderId)->toBe('ORD-2');
+    expect($statuses[0]->get()->merchantOrderId)->toBe('ORD-1');
+    expect($statuses[1]->get()->merchantOrderId)->toBe('ORD-2');
 
     // Verify requests were made
     Http::assertSent(function ($request) {

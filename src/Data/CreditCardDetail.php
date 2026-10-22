@@ -12,13 +12,17 @@ class CreditCardDetail
     /**
      * @param  string|null  $acquirer  Bank acquirer code (e.g., '014' for BCA, '022' for CIMB)
      * @param  string[]  $binWhitelist  Whitelist of BIN numbers allowed
-     * @param  bool|null  $saveCardToken  Whether to save card token for tokenization (POP only)
+     * @param  int|null  $saveCardToken  Token mode: 1 for 3DS, 2 for recurring payments (POP only)
      */
     public function __construct(
         public ?string $acquirer = null,
         public array $binWhitelist = [],
-        public ?bool $saveCardToken = null
-    ) {}
+        public ?int $saveCardToken = null
+    ) {
+        if ($saveCardToken !== null && ! in_array($saveCardToken, [1, 2], true)) {
+            throw new \InvalidArgumentException('saveCardToken must be 1 (3DS) or 2 (recurring payments).');
+        }
+    }
 
     public function toArray(): array
     {

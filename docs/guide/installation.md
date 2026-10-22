@@ -11,7 +11,7 @@ Sebelum mulai, pastikan project kamu memenuhi syarat berikut:
 | Kebutuhan    | Versi Minimum         | Cara Cek                |
 | ------------ | --------------------- | ----------------------- |
 | **PHP**      | 8.2 atau lebih tinggi | `php -v`                |
-| **Laravel**  | 10.x, 11.x, atau 12.x | `php artisan --version` |
+| **Laravel**  | 12.x atau 13.x | `php artisan --version` |
 | **Composer** | Versi terbaru         | `composer --version`    |
 
 > [!WARNING]
@@ -41,17 +41,19 @@ composer require duitku/laravel
 ## Langkah 2: Publish File Konfigurasi
 
 ```bash
-php artisan vendor:publish --provider="Duitku\Laravel\DuitkuServiceProvider" --tag="config"
+php artisan vendor:publish --tag=duitku-config
+# Untuk Blade component POP:
+php artisan vendor:publish --tag=duitku-assets
 ```
 
 **Apa yang terjadi?**
 
 - Perintah ini menyalin file `config/duitku.php` ke project kamu
 - File ini berisi semua pengaturan yang bisa kamu ubah (Merchant Code, API Key, timeout, dll)
-- Kamu **harus** menjalankan perintah ini agar bisa mengkonfigurasi SDK
+- Publish diperlukan untuk menyesuaikan file konfigurasi; variabel environment tetap dibaca tanpa publish.
 
 > [!IMPORTANT]
-> Jika kamu skip langkah ini, SDK tetap bisa berjalan tapi akan menggunakan nilai default. Kamu tidak akan bisa mengubah pengaturan.
+> Tanpa publish config, pengaturan environment tetap berlaku. Tanpa publish assets, Blade component tidak dapat memuat penghubung JavaScript POP.
 
 **Jika berhasil**, kamu akan melihat pesan seperti:
 
@@ -65,7 +67,7 @@ Copied File [/vendor/duitku/laravel/config/duitku.php] To [/config/duitku.php]
 
 Buka file `.env` di root project kamu dan tambahkan:
 
-```env
+```dotenv
 # === WAJIB ===
 
 # Merchant Code: Kode unik merchant kamu dari dashboard Duitku
@@ -91,11 +93,15 @@ DUITKU_EMAIL=
 # Timeout request dalam detik (default: 30 detik)
 DUITKU_TIMEOUT=30
 
-# Jumlah retry jika request gagal (default: 0 = tidak retry)
+# Jumlah retry tambahan untuk operasi baca/status (write tidak di-retry)
 DUITKU_RETRY_TIMES=0
 
 # Jeda antar retry dalam milidetik (default: 100ms)
 DUITKU_RETRY_SLEEP=100
+
+DUITKU_SIGNATURE_MODE=hmac-sha256
+DUITKU_VERIFY_CALLBACK_STATUS=true
+DUITKU_BATCH_CONCURRENCY=5
 
 # Channel log Laravel untuk mencatat request (kosongkan = tidak log)
 DUITKU_LOG_CHANNEL=

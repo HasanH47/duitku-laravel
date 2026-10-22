@@ -26,12 +26,12 @@ Duitku menyediakan API HTTP biasa yang bisa kamu panggil langsung. Tapi ada bebe
 
 | Masalah Tanpa SDK                                              | Solusi dari SDK                                            |
 | -------------------------------------------------------------- | ---------------------------------------------------------- |
-| ❌ Harus menghitung signature MD5/SHA256 manual — rentan salah | ✅ **Auto Signature** — SDK hitung otomatis                |
+| ❌ Menghitung signature per protokol secara manual | ✅ **Auto Signature** — HMAC pembayaran dan signer disbursement terpisah |
 | ❌ Response berupa array mentah — gampang typo                 | ✅ **Typed DTOs** — auto-complete di IDE                   |
 | ❌ Harus handle HTTP error sendiri                             | ✅ **Custom Exceptions** — tinggal `try-catch`             |
 | ❌ Cek status transaksi satu-satu (lambat)                     | ✅ **Parallel Check** — cek 50+ transaksi sekaligus        |
 | ❌ Validasi callback ribet                                     | ✅ **Event-Driven** — satu baris kode                      |
-| ❌ Harus baca docs Duitku terus-menerus                        | ✅ **33 Payment Method Enum** — kode jadi self-documenting |
+| ❌ Menghafal kode metode pembayaran | ✅ **Payment Method Enum** — gunakan `active()` dan cocokkan ketersediaan lewat API |
 
 > **Intinya:** SDK ini membuat kamu bisa fokus ke bisnis logic, bukan ngurusin detail teknis komunikasi dengan Duitku.
 

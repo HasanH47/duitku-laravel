@@ -30,7 +30,10 @@ class CallbackRequest
         public ?string $transactionState = null,
         public ?string $transactionStateStatus = null,
         public ?string $merchantCustomerId = null,
-        public ?string $expiryDate = null
+        public ?string $expiryDate = null,
+        public ?string $customerName = null,
+        public ?TransactionStatus $verifiedStatus = null,
+        public array $raw = [],
     ) {}
 
     public static function fromArray(array $data): self
@@ -61,7 +64,9 @@ class CallbackRequest
             transactionState: $data['transactionState'] ?? null,
             transactionStateStatus: $data['transactionStateStatus'] ?? null,
             merchantCustomerId: $data['merchantCustomerId'] ?? null,
-            expiryDate: $data['expiryDate'] ?? null
+            expiryDate: $data['expiryDate'] ?? null,
+            customerName: $data['customerName'] ?? null,
+            raw: $data,
         );
     }
 }

@@ -1,389 +1,101 @@
-# Usage: Payments
+# Pembayaran API
 
-Halaman ini menjelaskan cara **menerima pembayaran** dari pelanggan menggunakan Duitku API. Ini adalah fitur paling dasar dan paling sering digunakan.
-
----
-
-## 🔄 Alur Pembayaran (Flow)
-
-Sebelum masuk ke kode, penting untuk memahami **alur** dari awal sampai akhir:
-
-```
-1. Pelanggan klik "Bayar"
-   ↓
-2. Aplikasi kamu buat invoice ke Duitku (via SDK)
-   ↓
-3. Duitku kirim balik URL pembayaran
-   ↓
-4. Pelanggan diarahkan ke URL tersebut (redirect)
-   ↓
-5. Pelanggan bayar (transfer VA, scan QRIS, dll)
-   ↓
-6. Duitku kirim "callback" ke server kamu
-   ↓
-7. Aplikasi kamu update database: "Order sudah dibayar!"
-```
-
-> **Intinya:** Kamu buat invoice → dapat URL → pelanggan bayar di sana → Duitku kasih tahu kamu.
-
----
-
-## 💳 Membuat Pembayaran (Checkout)
-
-### Cara Paling Sederhana
+Gunakan `checkout()` untuk membuat invoice dengan metode pembayaran yang dipilih aplikasi. Untuk membiarkan pelanggan memilih metode di popup, gunakan [POP](./usage-pop).
 
 ```php
+use Duitku\Laravel\Data\PaymentRequest;
+use Duitku\Laravel\Enums\PaymentMethod;
 use Duitku\Laravel\Facades\Duitku;
-use Duitku\Laravel\Data\PaymentRequest;
 
-// Buat objek request pembayaran
 $request = new PaymentRequest(
-    amount: 50000,                         // Nominal pembayaran (Rupiah)
-    merchantOrderId: 'INV-' . time(),      // ID unik order kamu
-    productDetails: 'Topup 50 Diamonds',   // Deskripsi produk (muncul di halaman bayar)
-    email: 'pelanggan@example.com',        // Email pelanggan
+    amount: 50000,
+    merchantOrderId: 'INV-001',
+    productDetails: 'Pembayaran pesanan',
+    email: 'pelanggan@example.test',
+    paymentMethod: PaymentMethod::BCA_VA->value,
+    customerVaName: 'Pelanggan',
+    callbackUrl: route('duitku.callback'),
+    returnUrl: route('checkout.return'),
 );
 
-// Kirim ke Duitku → terima response
 $response = Duitku::checkout($request);
-
-// Arahkan pelanggan ke halaman pembayaran
+// Simpan reference pada order sebelum mengarahkan pelanggan.
 return redirect($response->paymentUrl);
 ```
 
-**Penjelasan setiap parameter:**
+Order ID harus unik dalam merchant. Aplikasi mengotorisasi order dan menentukan nominal dari data server, bukan dari input harga browser.
 
-| Parameter         | Wajib? | Penjelasan                                                                                                              |
-| ----------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `amount`          | ✅     | Nominal dalam Rupiah. Minimum Rp 10.000.                                                                                |
-| `merchantOrderId` | ✅     | ID unik untuk order ini. **Harus unik** per transaksi, max 50 karakter.                                                 |
-| `productDetails`  | ✅     | Deskripsi produk yang akan muncul di halaman pembayaran Duitku.                                                         |
-| `email`           | ✅     | Email pelanggan. Duitku akan mengirim notifikasi ke email ini. Max 50 karakter.                                         |
-| `paymentMethod`   | ❌     | Kode metode bayar (misal `'VC'` untuk kartu kredit). Kalau dikosongkan, pelanggan bisa pilih sendiri di halaman Duitku. |
-| `customerVaName`  | ❌     | Nama yang muncul di VA. **Wajib** untuk metode E-Commerce (Tokopedia).                                                  |
-| `phoneNumber`     | ❌     | Nomor HP pelanggan. Max 50 karakter.                                                                                    |
-| `expiryPeriod`    | ❌     | Waktu expired dalam menit. Override `default_expiry` di config.                                                         |
-| `callbackUrl`     | ❌     | URL callback custom. Override setting di dashboard Duitku.                                                              |
-| `returnUrl`       | ❌     | URL redirect setelah pelanggan selesai bayar.                                                                           |
+## Field request
 
-### Response yang Kamu Dapat
+| Field | Tipe PHP | Kehadiran pada request API | Arti |
+| --- | --- | --- | --- |
+| `amount` | int | Wajib | Rupiah positif; diserialisasi sebagai paymentAmount |
+| `merchantOrderId` | string | Wajib | ID order, maksimal 50 karakter |
+| `productDetails` | string | Wajib | Deskripsi, maksimal 255 karakter |
+| `email` | string | Wajib | Email pelanggan |
+| `paymentMethod` | string | Wajib | Kode channel dua karakter |
+| `customerVaName` | string atau null | Wajib untuk API | Nama VA, maksimal 20 karakter |
+| `callbackUrl` | string atau null | Wajib | URL HTTP/HTTPS webhook, maksimal 255 karakter |
+| `returnUrl` | string atau null | Wajib | URL HTTP/HTTPS redirect pelanggan, maksimal 255 karakter |
+| `expiryPeriod` | int atau null | Opsional | Menit; null memakai konfigurasi default |
+| `phoneNumber` | string atau null | Opsional | Nomor telepon pelanggan |
+| `itemDetails` | array | Opsional, sesuai channel | ItemDetail atau array berisi nama, price integer rupiah, dan quantity integer positif |
+| `customerDetail` | CustomerDetail, array, atau null | Sesuai channel | Detail pelanggan dan alamat |
+| `additionalParam` | string atau null | Opsional | Metadata aplikasi yang dikembalikan provider |
+| `merchantUserInfo` | string atau null | Opsional | Informasi pengguna merchant |
+| `accountLink` | AccountLink, array, atau null | Sesuai channel | Credential account-link OVO/Shopee |
+| `creditCardDetail` | CreditCardDetail, array, atau null | Sesuai channel | Acquirer, BIN whitelist, dan token mode |
+| `merchantCustomerId` | string atau null | Deprecated | Alias migrasi; gunakan customerDetail.merchantCustomerId |
 
-```php
-$response = Duitku::checkout($request);
+Field null, string kosong, dan array kosong tidak dikirim. SDK memvalidasi persyaratan dasar; batas nominal, expiry, dan aktivasi channel tetap mengikuti provider. Tidak ada minimum Rp10.000 global yang dipaksakan SDK.
 
-$response->merchantCode;    // Merchant Code kamu
-$response->reference;       // Reference ID dari Duitku (simpan ini!)
-$response->paymentUrl;      // URL untuk redirect pelanggan
-$response->statusCode;      // '00' = berhasil dibuat
-$response->statusMessage;   // Pesan status
-$response->vaNumber;        // Nomor VA (jika pakai Virtual Account)
-$response->amount;          // Nominal pembayaran
-$response->qrString;        // String QRIS (jika pakai QRIS)
-```
-
----
-
-## 🏷️ Menggunakan PaymentMethod Enum (Recommended)
-
-Daripada menghafal kode pembayaran (`'VC'`, `'BC'`, dll), gunakan Enum yang sudah disediakan:
-
-```php
-use Duitku\Laravel\Enums\PaymentMethod;
-
-// ❌ Cara lama (rentan typo)
-$request = new PaymentRequest(
-    // ...
-    paymentMethod: 'VCA'  // Typo! Harusnya 'VC'. Error baru ketahuan saat runtime.
-);
-
-// ✅ Cara baru (IDE kasih auto-complete)
-$request = new PaymentRequest(
-    // ...
-    paymentMethod: PaymentMethod::CREDIT_CARD->value  // 'VC' — aman dari typo!
-);
-```
-
-### Daftar Lengkap Metode Pembayaran
-
-| Enum                  | Kode | Nama                              |
-| --------------------- | ---- | --------------------------------- |
-| `CREDIT_CARD`         | `VC` | Credit Card (Visa/MasterCard/JCB) |
-| `BCA_VA`              | `BC` | BCA Virtual Account               |
-| `MANDIRI_VA`          | `M2` | Mandiri Virtual Account           |
-| `MAYBANK_VA`          | `VA` | Maybank Virtual Account           |
-| `BNI_VA`              | `I1` | BNI Virtual Account               |
-| `CIMB_VA`             | `B1` | CIMB Niaga Virtual Account        |
-| `PERMATA_VA`          | `BT` | Permata Bank Virtual Account      |
-| `ATM_BERSAMA`         | `A1` | ATM Bersama                       |
-| `ARTHA_GRAHA`         | `AG` | Bank Artha Graha                  |
-| `NEO_COMMERCE`        | `NC` | Bank Neo Commerce / BNC           |
-| `BRI_VA`              | `BR` | BRIVA                             |
-| `SAHABAT_SAMPOERNA`   | `S1` | Bank Sahabat Sampoerna            |
-| `DANAMON_VA`          | `DM` | Danamon Virtual Account           |
-| `BSI_VA`              | `BV` | BSI Virtual Account               |
-| `PEGADAIAN_ALFA_POS`  | `FT` | Pegadaian / ALFA / Pos            |
-| `INDOMARET`           | `IR` | Indomaret                         |
-| `OVO`                 | `OV` | OVO (Support Void)                |
-| `SHOPEEPAY_APP`       | `SA` | Shopee Pay Apps (Support Void)    |
-| `LINKAJA_FIXED`       | `LF` | LinkAja Apps (Fixed Fee)          |
-| `LINKAJA_PERCENTAGE`  | `LA` | LinkAja Apps (Percentage Fee)     |
-| `DANA`                | `DA` | DANA                              |
-| `SHOPEE_ACCOUNT_LINK` | `SL` | Shopee Pay Account Link           |
-| `OVO_ACCOUNT_LINK`    | `OL` | OVO Account Link                  |
-| `SHOPEEPAY_QRIS`      | `SP` | Shopee Pay QRIS                   |
-| `NOBU_QRIS`           | `NQ` | Nobu QRIS                         |
-| `GUDANG_VOUCHER_QRIS` | `GQ` | Gudang Voucher QRIS               |
-| `NUSAPAY_QRIS`        | `SQ` | Nusapay QRIS                      |
-| `INDODANA`            | `DN` | Indodana Paylater                 |
-| `ATOME`               | `AT` | ATOME                             |
-| `JENIUS_PAY`          | `JP` | Jenius Pay                        |
-| `TOKOPEDIA_CARD`      | `T1` | Tokopedia Card Payment            |
-| `TOKOPEDIA_EWALLET`   | `T2` | Tokopedia E-Wallet                |
-| `TOKOPEDIA_OTHERS`    | `T3` | Tokopedia Others                  |
-
-### Helper Methods
-
-Enum ini juga punya method pembantu:
-
-```php
-use Duitku\Laravel\Enums\PaymentMethod;
-
-PaymentMethod::CREDIT_CARD->label();              // 'Credit Card (Visa / Master Card / JCB)'
-PaymentMethod::BCA_VA->isVirtualAccount();         // true
-PaymentMethod::TOKOPEDIA_CARD->isEcommerce();      // true (customerVaName wajib!)
-PaymentMethod::CREDIT_CARD->requiresCustomerDetail(); // true (customerDetail & itemDetails wajib!)
-PaymentMethod::SHOPEEPAY_QRIS->isQris();           // true
-```
-
-> [!IMPORTANT]
->
-> - Untuk metode bayar **Kredit** (`VC`, `DN`, `AT`): parameter `customerDetail` dan `itemDetails` menjadi **wajib**.
-> - Untuk metode bayar **E-Commerce** (`T1`, `T2`, `T3`): parameter `customerVaName` menjadi **wajib**.
-
----
-
-## 📦 Menggunakan Typed DTOs (Recommended)
-
-SDK ini menyediakan DTO (Data Transfer Object) typed untuk setiap parameter kompleks. Keuntungannya:
-
-- ✅ IDE auto-complete
-- ✅ Typo ketahuan saat coding, bukan saat runtime
-- ✅ Kode lebih mudah dibaca
-
-> Kamu **tetap bisa** pakai array biasa jika mau. SDK mendukung keduanya.
-
-### ItemDetail
+## DTO untuk item dan pelanggan
 
 ```php
 use Duitku\Laravel\Data\ItemDetail;
-
-// ✅ Pakai DTO (recommended)
-$items = [
-    new ItemDetail(name: 'Kaos Developer', price: 150000, quantity: 1),
-    new ItemDetail(name: 'Sticker Pack',   price: 20000,  quantity: 2),
-];
-
-// ❌ Pakai array biasa (masih bisa, tapi kurang aman)
-$items = [
-    ['name' => 'Kaos Developer', 'price' => 150000, 'quantity' => 1],
-    ['name' => 'Sticker Pack',   'price' => 20000,  'quantity' => 2],
-];
-```
-
-> [!WARNING]
-> Total dari semua `price × quantity` di `itemDetails` **harus sama** dengan `amount` di `PaymentRequest`. Jika tidak cocok, Duitku akan menolak dengan error `409 Payment amount must be equal to all item price`.
-
-### CustomerDetail & Address
-
-```php
 use Duitku\Laravel\Data\CustomerDetail;
 use Duitku\Laravel\Data\Address;
 
-// Buat objek Address (untuk billing dan shipping)
-$address = new Address(
-    firstName: 'John',
-    lastName: 'Doe',
-    address: 'Jl. Kembangan Raya No. 10',
-    city: 'Jakarta',
-    postalCode: '11530',
-    phone: '08123456789',
-    countryCode: 'ID'     // Default 'ID', bisa diubah jika perlu
-);
-
-// Buat CustomerDetail
-$customer = new CustomerDetail(
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john@example.com',
-    phoneNumber: '08123456789',
-    billingAddress: $address,   // Opsional
-    shippingAddress: $address   // Opsional
+$request->itemDetails = [new ItemDetail('Pesanan', 50000, 1)];
+$request->customerDetail = new CustomerDetail(
+    firstName: 'Pelanggan', lastName: 'Contoh',
+    email: 'pelanggan@example.test', phoneNumber: '08000000000',
+    billingAddress: new Address('Pelanggan', 'Contoh', 'Jl. Contoh', 'Jakarta', '11530', '08000000000'),
 );
 ```
 
-### Contoh Lengkap (Checkout dengan semua DTOs)
+Sesuaikan jumlah item dengan nominal menurut ketentuan channel. Array biasa tetap didukung; DTO memberi informasi tipe pada IDE. `AccountLink`, `OvoDetail`, dan `ShopeeDetail` tersedia untuk channel account-link yang sudah diaktifkan merchant. Credential tersebut tidak boleh berasal dari pelanggan lain atau dicatat mentah ke log.
+
+## Response dan status
+
+`checkout()` mengembalikan `PaymentResponse` dengan merchant code, reference, dan payment URL yang terisi. Field opsional mencakup status code/message, VA number, amount, QR string, dan app URL. Respons rusak menghasilkan `MalformedResponseException`; penolakan bisnis menghasilkan `DuitkuApiException`.
 
 ```php
-use Duitku\Laravel\Data\PaymentRequest;
-use Duitku\Laravel\Data\ItemDetail;
-use Duitku\Laravel\Data\CustomerDetail;
-use Duitku\Laravel\Data\Address;
-use Duitku\Laravel\Enums\PaymentMethod;
+$status = Duitku::checkStatus('INV-001');
 
-$items = [
-    new ItemDetail('Kaos Developer', 150000, 1),
-    new ItemDetail('Sticker Pack', 20000, 1),
-];
-
-$address = new Address('John', 'Doe', 'Jl. X No. 10', 'Jakarta', '11530', '081234');
-
-$customer = new CustomerDetail(
-    'John', 'Doe', 'john@example.com', '081234',
-    billingAddress: $address
-);
-
-$request = new PaymentRequest(
-    amount: 170000,                                    // 150000 + 20000
-    merchantOrderId: 'INV-' . time(),
-    productDetails: 'Beli Merchandise',
-    email: 'john@example.com',
-    paymentMethod: PaymentMethod::CREDIT_CARD->value,  // Wajib pakai DTO karena Credit Card
-    itemDetails: $items,                               // Wajib untuk Credit Card
-    customerDetail: $customer,                         // Wajib untuk Credit Card
-    expiryPeriod: 60
-);
-
-$response = Duitku::checkout($request);
-return redirect($response->paymentUrl);
-```
-
----
-
-## 🔗 Account Link (OVO & Shopee)
-
-Untuk metode **OVO Account Link** (`OL`) dan **Shopee Account Link** (`SL`), kamu perlu menambahkan parameter `accountLink`:
-
-```php
-use Duitku\Laravel\Data\AccountLink;
-use Duitku\Laravel\Data\OvoDetail;
-use Duitku\Laravel\Data\ShopeeDetail;
-
-// === OVO Account Link ===
-$accountLink = new AccountLink(
-    credentialCode: 'A0F22572-4AF1-E111-812C-B01224449936',  // Credential dari Duitku
-    ovo: OvoDetail::cash(10000)  // Shortcut: pembayaran OVO Cash
-);
-
-// === Shopee Account Link ===
-$accountLink = new AccountLink(
-    credentialCode: 'A0F22572-4AF1-E111-812C-B01224449936',
-    shopee: new ShopeeDetail(
-        promo_ids: 'campaign111',   // Kode voucher promo (max 50 karakter)
-        useCoin: true               // Gunakan koin Shopee
-    )
-);
-
-// Masukkan ke PaymentRequest
-$request = new PaymentRequest(
-    // ...parameter lainnya
-    paymentMethod: PaymentMethod::OVO_ACCOUNT_LINK->value,
-    accountLink: $accountLink,
-);
-```
-
----
-
-## 💳 Credit Card Detail
-
-Untuk customisasi tambahan saat pakai kartu kredit:
-
-```php
-use Duitku\Laravel\Data\CreditCardDetail;
-
-$ccDetail = new CreditCardDetail(
-    acquirer: '014',                            // Kode bank acquirer (014=BCA, 022=CIMB)
-    binWhitelist: ['014', '022', '400000'],      // BIN kartu yang diperbolehkan
-);
-
-$request = new PaymentRequest(
-    // ...parameter lainnya
-    paymentMethod: PaymentMethod::CREDIT_CARD->value,
-    creditCardDetail: $ccDetail,
-);
-```
-
----
-
-## 📊 Cek Status Transaksi
-
-Setelah membuat pembayaran, kamu pasti ingin tahu: **sudah dibayar belum?**
-
-### Cek Satu Transaksi
-
-```php
-use Duitku\Laravel\Support\PaymentCode;
-
-$status = Duitku::checkStatus('INV-123');
-
-if ($status->statusCode === PaymentCode::SUCCESS) {
-    echo "✅ Pembayaran berhasil!";
-    echo "Fee: Rp " . number_format($status->fee);
-} elseif ($status->statusCode === PaymentCode::PENDING) {
-    echo "⏳ Menunggu pembayaran...";
-} else {
-    echo "❌ Pembayaran gagal/expired.";
+if ($status->statusCode === '00') {
+    // Cocokkan dengan order dan proses secara idempotent.
 }
 ```
 
-### Cek Banyak Transaksi Sekaligus (Parallel) 🚀
+Status API: `00` paid, `01` pending, dan `02` canceled/failed. Jangan memakai result code redirect browser untuk menetapkan status order.
 
-Fitur unggulan SDK ini! Cek 50+ transaksi dalam waktu kurang dari 1 detik:
+## Batch dan daftar metode
 
 ```php
-$statuses = Duitku::checkStatuses(['INV-001', 'INV-002', 'INV-003']);
-
-foreach ($statuses as $status) {
-    if ($status === null) {
-        continue; // Skip jika request gagal
+foreach (Duitku::checkStatuses(['INV-001', 'INV-002']) as $result) {
+    if ($result->successful()) {
+        $status = $result->get();
+        echo $result->key.': '.$status->statusCode;
+    } else {
+        report($result->error);
     }
-    echo "{$status->merchantOrderId}: {$status->statusCode}\n";
 }
+
+$methods = Duitku::paymentMethods(50000); // PaymentFee[] sesuai akun merchant
+$knownActiveMethods = PaymentMethod::active(); // Enum lokal, bukan bukti channel aktif pada akun
 ```
 
-> **Kenapa cepat?** SDK menggunakan `Http::pool` bawaan Laravel yang mengirim semua request secara bersamaan (paralel), bukan satu per satu (sekuensial).
+Batch mempertahankan urutan dan item duplikat, dengan concurrency default 5. Lihat [kontrak BatchResult](./upgrading#hasil-batch) untuk detail error dan batas. Daftar enum mempertahankan GQ sebagai deprecated, tetapi invoice baru menolaknya.
 
----
-
-## 📋 Daftar Metode Pembayaran
-
-Ambil daftar metode pembayaran yang tersedia untuk jumlah tertentu:
-
-```php
-$methods = Duitku::paymentMethods(170000);
-
-foreach ($methods as $method) {
-    echo $method->paymentName;   // Contoh: "BCA Virtual Account"
-    echo $method->paymentMethod; // Contoh: "BC"
-    echo $method->paymentImage;  // URL gambar ikon
-    echo $method->totalFee;      // Fee transaksi
-}
-```
-
-> Response adalah array `PaymentFee` objects — typed, bukan array mentah.
-
----
-
-## ⚠️ Kesalahan Umum
-
-| Error                                            | Penyebab                                          | Solusi                                       |
-| ------------------------------------------------ | ------------------------------------------------- | -------------------------------------------- |
-| `Minimum Payment 10000 IDR`                      | Nominal terlalu kecil                             | Set `amount` minimal 10000                   |
-| `merchantOrderId telah digunakan`                | Order ID sudah pernah dipakai                     | Gunakan ID unik (misal `'INV-' . time()`)    |
-| `Invalid Email Address`                          | Format email salah                                | Cek format email pelanggan                   |
-| `Payment amount must be equal to all item price` | Total itemDetails ≠ amount                        | Pastikan total `price × quantity` = `amount` |
-| `Customer VA Name must not be empty`             | Pakai metode E-Commerce tapi tanpa customerVaName | Isi parameter `customerVaName`               |
-| `Wrong signature`                                | API Key atau Merchant Code salah                  | Cek `.env` kamu                              |
-
----
-
-Selanjutnya, pelajari [Duitku POP](./usage-pop) untuk integrasi popup yang lebih smooth. ⚡
+Lanjutkan ke [callback terverifikasi](./callback-system) untuk menyimpan pembayaran dengan benar.

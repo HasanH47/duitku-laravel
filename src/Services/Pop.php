@@ -7,116 +7,48 @@ use Duitku\Laravel\Data\PaymentFee;
 use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Data\PopResponse;
 use Duitku\Laravel\Data\TransactionStatus;
+use Duitku\Laravel\Duitku;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Support\DuitkuConfig;
+use Duitku\Laravel\Support\PaymentSigner;
 
 class Pop
 {
     use InteractsWithApi;
 
-    protected Client $client;
+    public function __construct(private DuitkuConfig $config) {}
 
-    public function __construct(
-        protected DuitkuConfig $config
-    ) {
-        $this->client = new Client($config);
-    }
-
-    /**
-     * Create POP Transaction
-     * Returns a reference ID to be used with duitku.js
-     */
     public function createTransaction(PaymentRequest $request): PopResponse
     {
+        $payload = $request->validatedPayload($this->config->getDefaultExpiry(), pop: true);
         $timestamp = $this->getTimestamp();
-        $merchantCode = $this->config->getMerchantCode();
-        $apiKey = $this->config->getApiKey();
-
-        // Signature for Headers: SHA256(merchantCode + timestamp + apiKey)
-        $signature = $this->generateSignature($merchantCode.$timestamp.$apiKey, 'sha256');
-
-        $endpoint = $this->config->getApiHost().'/api/merchant/createInvoice';
-
-        $response = $this->client->request($this->config->getApiHost())
+        $signature = (new PaymentSigner($this->config))->sign(
+            $this->config->getMerchantCode().$timestamp,
+            'sha256',
+        );
+        $client = new Client($this->config);
+        $response = $client->request($this->config->getApiHost())
             ->withHeaders([
                 'x-duitku-signature' => $signature,
-                'x-duitku-timestamp' => $timestamp,
-                'x-duitku-merchantcode' => $merchantCode,
+                'x-duitku-timestamp' => (string) $timestamp,
+                'x-duitku-merchantcode' => $this->config->getMerchantCode(),
             ])
-            ->post($endpoint, $request->toArray());
+            ->post('/api/merchant/createInvoice', $payload);
 
-        if (! $response->successful()) {
-            $response->throw();
-        }
-
-        return PopResponse::fromArray($response->json())->throwIfFailed();
+        return PopResponse::fromArray($client->json($response))->throwIfFailed();
     }
 
-    /**
-     * Check POP Transaction Status
-     */
     public function checkTransaction(string $merchantOrderId): TransactionStatus
     {
-        $timestamp = $this->getTimestamp();
-        $merchantCode = $this->config->getMerchantCode();
-        $apiKey = $this->config->getApiKey();
-
-        $signature = $this->generateSignature($merchantCode.$timestamp.$apiKey, 'sha256');
-
-        $endpoint = $this->config->getApiHost().'/api/merchant/transactionStatus';
-
-        $response = $this->client->request($this->config->getApiHost())
-            ->withHeaders([
-                'x-duitku-signature' => $signature,
-                'x-duitku-timestamp' => $timestamp,
-                'x-duitku-merchantcode' => $merchantCode,
-            ])
-            ->post($endpoint, [
-                'merchantOrderId' => $merchantOrderId,
-            ]);
-
-        if (! $response->successful()) {
-            $response->throw();
-        }
-
-        return TransactionStatus::fromArray($response->json());
+        return (new Duitku($this->config))->checkStatus($merchantOrderId);
     }
 
-    /**
-     * Get Available Payment Methods (POP)
-     *
-     * @return PaymentFee[]
-     */
+    /** @return list<PaymentFee> */
     public function getPaymentMethod(int $amount): array
     {
-        $timestamp = $this->getTimestamp();
-        $merchantCode = $this->config->getMerchantCode();
-        $apiKey = $this->config->getApiKey();
-
-        $signature = $this->generateSignature($merchantCode.$timestamp.$apiKey, 'sha256');
-
-        $endpoint = $this->config->getApiHost().'/api/merchant/paymentmethod/getpaymentmethod';
-
-        $response = $this->client->request($this->config->getApiHost())
-            ->withHeaders([
-                'x-duitku-signature' => $signature,
-                'x-duitku-timestamp' => $timestamp,
-                'x-duitku-merchantcode' => $merchantCode,
-            ])
-            ->post($endpoint, [
-                'paymentAmount' => $amount,
-            ]);
-
-        if (! $response->successful()) {
-            $response->throw();
-        }
-
-        return PaymentFee::fromList($response->json('paymentFee') ?? []);
+        return (new Duitku($this->config))->paymentMethods($amount);
     }
 
-    /**
-     * Get the Duitku JS Script URL for Frontend
-     */
     public function scriptUrl(): string
     {
         return $this->config->getAppHost().'/lib/js/duitku.js';

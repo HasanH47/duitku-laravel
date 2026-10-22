@@ -4,6 +4,7 @@ namespace Duitku\Laravel\Data;
 
 use Duitku\Laravel\Exceptions\DuitkuApiException;
 use Duitku\Laravel\Support\PaymentCode;
+use Duitku\Laravel\Support\ResponseValidator;
 
 class PopResponse
 {
@@ -17,6 +18,18 @@ class PopResponse
 
     public static function fromArray(array $data): self
     {
+        if (isset($data['statusCode']) && $data['statusCode'] !== PaymentCode::SUCCESS) {
+            throw new DuitkuApiException('Duitku rejected the POP invoice request.', (string) $data['statusCode']);
+        }
+
+        ResponseValidator::validate($data, [
+            'merchantCode' => ['required', 'string'],
+            'reference' => ['required', 'string'],
+            'paymentUrl' => ['required', 'url:http,https'],
+            'statusCode' => ['required', 'string', 'in:00'],
+            'statusMessage' => ['required', 'string'],
+        ], 'POP invoice');
+
         return new self(
             merchantCode: $data['merchantCode'] ?? '',
             reference: $data['reference'] ?? '',

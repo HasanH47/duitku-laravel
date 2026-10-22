@@ -6,41 +6,28 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+
 jobs:
-  phpstan:
+  checks:
     runs-on: ubuntu-latest
-    name: PHPStan
+    name: PHPStan and Pint
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
-          php-version: 8.3
+          php-version: '8.4'
+          extensions: mbstring, dom, curl, sqlite, pdo_sqlite
           coverage: none
-
       - name: Install dependencies
-        run: |
-          composer update --prefer-dist --no-interaction
-
+        run: composer update --prefer-dist --no-interaction --no-progress
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse
-
-  pint:
-    runs-on: ubuntu-latest
-    name: Pint
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        run: composer analyse
+      - name: Check formatting
+        run: composer format:check
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          php-version: 8.3
-          coverage: none
-
-      - name: Install dependencies
-        run: |
-          composer update --prefer-dist --no-interaction
-
-      - name: Run Pint
-        run: vendor/bin/pint --test
+          node-version: '24'
+      - name: Test POP browser adapter
+        run: node tests/js/pop.test.cjs

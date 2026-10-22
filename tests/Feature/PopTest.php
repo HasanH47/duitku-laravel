@@ -26,7 +26,9 @@ test('pop create transaction generates correct signature and headers', function 
         amount: 10000,
         merchantOrderId: 'INV-001',
         productDetails: 'Test Item',
-        email: 'test@example.com'
+        email: 'test@example.com',
+        callbackUrl: 'https://merchant.test/callback',
+        returnUrl: 'https://merchant.test/return'
     );
 
     $response = Duitku::pop()->createTransaction($request);
@@ -45,4 +47,28 @@ test('pop create transaction generates correct signature and headers', function 
                $hasHeaderTimestamp &&
                $hasHeaderSignature;
     });
+});
+
+test('pop status and payment methods use the documented API V2 endpoints', function () {
+    Http::fake([
+        '*/webapi/api/merchant/transactionStatus' => Http::response([
+            'merchantOrderId' => 'POP-001',
+            'reference' => 'REF-POP-001',
+            'amount' => '10000',
+            'statusCode' => '01',
+            'statusMessage' => 'Pending',
+        ]),
+        '*/webapi/api/merchant/paymentmethod/getpaymentmethod' => Http::response([
+            'responseCode' => '00',
+            'paymentFee' => [['paymentMethod' => 'BC', 'paymentName' => 'BCA VA', 'totalFee' => '1000']],
+        ]),
+    ]);
+
+    expect(Duitku::pop()->checkTransaction('POP-001')->statusCode)->toBe('01')
+        ->and(Duitku::pop()->getPaymentMethod(10000)[0]->paymentMethod)->toBe('BC');
+
+    Http::assertSent(fn ($request) => $request->url() ===
+        'https://sandbox.duitku.com/webapi/api/merchant/transactionStatus' &&
+        $request['signature'] === hash_hmac('sha256', 'D1234POP-001', 'test-api-key'));
+    Http::assertSentCount(2);
 });

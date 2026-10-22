@@ -5,6 +5,7 @@ namespace Duitku\Laravel\Data;
 use Duitku\Laravel\Exceptions\DuitkuApiException;
 use Duitku\Laravel\Exceptions\InsufficientFundsException;
 use Duitku\Laravel\Support\DisbursementCode;
+use Duitku\Laravel\Support\ResponseValidator;
 
 class DisbursementResponse
 {
@@ -26,6 +27,8 @@ class DisbursementResponse
 
     public static function fromArray(array $data): self
     {
+        ResponseValidator::validate($data, ['responseCode' => ['required', 'string']], 'disbursement');
+
         return new self(
             responseCode: $data['responseCode'] ?? '',
             responseDesc: $data['responseDesc'] ?? (($data['statusDesc'] ?? '')), // Fallback

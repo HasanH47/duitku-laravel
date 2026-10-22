@@ -31,6 +31,10 @@ return [
     */
     'sandbox_mode' => env('DUITKU_SANDBOX_MODE', true),
 
+    // Payment API and POP only. Disbursement keeps its own signature protocol.
+    'signature_mode' => env('DUITKU_SIGNATURE_MODE', 'hmac-sha256'),
+    'verify_callback_status' => env('DUITKU_VERIFY_CALLBACK_STATUS', true),
+
     /*
     |--------------------------------------------------------------------------
     | Default Expiry Period
@@ -63,13 +67,14 @@ return [
     'timeout' => env('DUITKU_TIMEOUT', 30),
     'retry_times' => env('DUITKU_RETRY_TIMES', 0),
     'retry_sleep' => env('DUITKU_RETRY_SLEEP', 100), // milliseconds
+    'batch_concurrency' => env('DUITKU_BATCH_CONCURRENCY', 5),
 
     /*
     |--------------------------------------------------------------------------
     | Logging
     |--------------------------------------------------------------------------
     |
-    | Set a Laravel log channel to log all Duitku API requests/responses.
+    | Set a Laravel log channel to log request metadata without request bodies.
     | Set to null to disable logging.
     |
     */

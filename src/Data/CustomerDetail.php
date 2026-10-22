@@ -10,7 +10,8 @@ class CustomerDetail
         public string $email,
         public string $phoneNumber,
         public ?Address $billingAddress = null,
-        public ?Address $shippingAddress = null
+        public ?Address $shippingAddress = null,
+        public ?string $merchantCustomerId = null,
     ) {}
 
     public function toArray(): array
@@ -22,6 +23,7 @@ class CustomerDetail
             'phoneNumber' => $this->phoneNumber,
             'billingAddress' => $this->billingAddress?->toArray(),
             'shippingAddress' => $this->shippingAddress?->toArray(),
+            'merchantCustomerId' => $this->merchantCustomerId,
         ], fn ($value) => ! is_null($value));
     }
 }

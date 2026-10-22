@@ -19,6 +19,9 @@ return [
     // Mode sandbox: true = testing, false = production
     'sandbox_mode' => env('DUITKU_SANDBOX_MODE', true),
 
+    'signature_mode' => env('DUITKU_SIGNATURE_MODE', 'hmac-sha256'),
+    'verify_callback_status' => env('DUITKU_VERIFY_CALLBACK_STATUS', true),
+
     // Waktu expired pembayaran dalam menit
     'default_expiry' => env('DUITKU_DEFAULT_EXPIRY', 60),
 
@@ -31,6 +34,7 @@ return [
     'retry_times' => env('DUITKU_RETRY_TIMES', 0),
     'retry_sleep' => env('DUITKU_RETRY_SLEEP', 100),
     'log_channel' => env('DUITKU_LOG_CHANNEL', null),
+    'batch_concurrency' => env('DUITKU_BATCH_CONCURRENCY', 5),
 ];
 ```
 
@@ -128,9 +132,9 @@ return [
 
 |                   |                                                                                    |
 | ----------------- | ---------------------------------------------------------------------------------- |
-| **Apa ini?**      | Berapa kali SDK mencoba ulang jika request gagal (misal timeout atau server error) |
+| **Apa ini?**      | Percobaan tambahan untuk operasi baca/status saat connection error, HTTP 429, atau HTTP 5xx |
 | **Default**       | `0` (tidak retry sama sekali)                                                      |
-| **Kapan diubah?** | Di production, disarankan set ke `2` atau `3` agar lebih resilient                 |
+| **Kapan diubah?** | Sesuaikan dengan batas waktu aplikasi; invoice dan eksekusi payout tidak diulang otomatis |
 
 > **Analogi:** Bayangkan kamu telepon seseorang tapi tidak diangkat. `retry_times` = berapa kali kamu mau telepon ulang sebelum menyerah.
 
@@ -150,16 +154,17 @@ return [
 
 |                       |                                                                     |
 | --------------------- | ------------------------------------------------------------------- |
-| **Apa ini?**          | Nama channel log Laravel untuk mencatat semua request ke Duitku API |
+| **Apa ini?**          | Nama channel log Laravel untuk mencatat metadata request ke Duitku API |
 | **Default**           | `null` (tidak log)                                                  |
 | **Kapan diaktifkan?** | Saat debugging atau di production untuk audit trail                 |
 | **Contoh value**      | `'stack'`, `'daily'`, `'duitku'` (channel custom kamu)              |
 
 **Jika diaktifkan**, SDK akan mencatat:
 
-- URL yang dipanggil
+- Host dan path yang dipanggil
 - Method HTTP (POST)
-- Body request (untuk debugging)
+
+Body, query string, dan header tidak dicatat karena dapat mengandung data pelanggan atau kredensial replay. Log metadata ini bukan catatan transaksi lengkap.
 
 > [!TIP]
 > Untuk production, buat channel log terpisah agar log Duitku tidak bercampur dengan log aplikasi lain:
@@ -181,7 +186,7 @@ return [
 
 ## 🏭 Contoh Konfigurasi Production
 
-```env
+```dotenv
 DUITKU_MERCHANT_CODE=DPROD01
 DUITKU_API_KEY=your-production-api-key
 DUITKU_SANDBOX_MODE=false
@@ -193,7 +198,7 @@ DUITKU_LOG_CHANNEL=duitku
 
 ## 🧪 Contoh Konfigurasi Development
 
-```env
+```dotenv
 DUITKU_MERCHANT_CODE=DSAND01
 DUITKU_API_KEY=your-sandbox-api-key
 DUITKU_SANDBOX_MODE=true
@@ -205,3 +210,11 @@ DUITKU_LOG_CHANNEL=
 ---
 
 Setelah konfigurasi siap, saatnya mulai membuat pembayaran! Lanjut ke [Usage - Payments](./usage-payments). 🚀
+
+## Pengaturan rilis major
+
+`signature_mode` memilih `hmac-sha256` (default) atau `legacy` secara eksplisit. `verify_callback_status` default true dan menambahkan verifikasi server sebelum event pembayaran.
+
+`batch_concurrency` default 5, dengan batas 1–20. Timeout harus 1–300 detik; retry times adalah 0–5 percobaan tambahan untuk operasi baca/status, dengan jeda 0–60.000 milidetik. Operasi invoice dan eksekusi payout tidak diulang otomatis.
+
+Logging hanya menyimpan metadata request tanpa body, header, atau query string. Lihat [panduan migrasi](./upgrading) untuk perubahan kontrak dan pengaturan lengkap.

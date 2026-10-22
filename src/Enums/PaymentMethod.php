@@ -43,6 +43,7 @@ enum PaymentMethod: string
     // QRIS
     case SHOPEEPAY_QRIS = 'SP';
     case NOBU_QRIS = 'NQ';
+    /** @deprecated Discontinued by Duitku in September 2026. */
     case GUDANG_VOUCHER_QRIS = 'GQ';
     case NUSAPAY_QRIS = 'SQ';
 
@@ -142,5 +143,16 @@ enum PaymentMethod: string
             self::SHOPEEPAY_QRIS, self::NOBU_QRIS,
             self::GUDANG_VOUCHER_QRIS, self::NUSAPAY_QRIS,
         ]);
+    }
+
+    public function isDiscontinued(): bool
+    {
+        return $this === self::GUDANG_VOUCHER_QRIS;
+    }
+
+    /** @return list<self> */
+    public static function active(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $method) => ! $method->isDiscontinued()));
     }
 }

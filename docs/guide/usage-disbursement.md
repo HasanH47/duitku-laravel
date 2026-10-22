@@ -26,7 +26,7 @@ Sebelum menggunakan Disbursement, kamu perlu:
 2. **Dapatkan User ID dan Email** — Dari tim Duitku
 3. **Set di `.env`:**
 
-```env
+```dotenv
 DUITKU_USER_ID=your-user-id
 DUITKU_EMAIL=your-email@example.com
 ```
@@ -85,7 +85,7 @@ $info = new DisbursementInfo(
 );
 
 // Verifikasi rekening → Duitku akan cek apakah rekening valid
-$inquiry = Duitku::disbursement()->bankInquiry($info);
+$inquiry = Duitku::disbursement()->transfer()->inquiry($info);
 
 // Cek hasilnya
 if ($inquiry->responseCode === '00') {
@@ -102,7 +102,7 @@ if ($inquiry->responseCode === '00') {
 ### Langkah 2: Execute (Transfer Uang)
 
 ```php
-$transfer = Duitku::disbursement()->transfer(
+$transfer = Duitku::disbursement()->transfer()->execute(
     disburseId: $inquiry->disburseId,        // ID dari inquiry
     info: $info,                             // Info transfer yang sama
     accountName: $inquiry->accountName,       // Nama pemilik dari inquiry
@@ -129,7 +129,12 @@ $infos = [
 $results = Duitku::disbursement()->transfer()->bulkInquiry($infos);
 
 foreach ($results as $result) {
-    echo "{$result->bankAccount}: {$result->accountName} — {$result->responseCode}\n";
+    if (! $result->successful()) {
+        report($result->error);
+        continue;
+    }
+    $inquiry = $result->get();
+    echo "{$inquiry->bankAccount}: {$inquiry->accountName} — {$inquiry->responseCode}\n";
 }
 ```
 

@@ -2,6 +2,8 @@
 
 namespace Duitku\Laravel\Data;
 
+use Duitku\Laravel\Support\ResponseValidator;
+
 /**
  * Payment Fee response from Get Payment Method API.
  *
@@ -18,6 +20,11 @@ class PaymentFee
 
     public static function fromArray(array $data): self
     {
+        ResponseValidator::validate($data, [
+            'paymentMethod' => ['required', 'string'],
+            'paymentName' => ['required', 'string'],
+        ], 'payment method');
+
         return new self(
             paymentMethod: $data['paymentMethod'] ?? '',
             paymentName: $data['paymentName'] ?? '',

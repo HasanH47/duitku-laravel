@@ -4,6 +4,7 @@ namespace Duitku\Laravel\Services\Disbursement;
 
 use Duitku\Laravel\Concerns\InteractsWithApi;
 use Duitku\Laravel\Data\DisbursementResponse;
+use Duitku\Laravel\Exceptions\MalformedResponseException;
 use Duitku\Laravel\Http\Client;
 use Duitku\Laravel\Support\DuitkuConfig;
 
@@ -45,13 +46,13 @@ class Finance
 
         $endpoint = '/webapi/api/disbursement/inquirystatus';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest(retryable: true)->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        return DisbursementResponse::fromArray($response->json());
+        return DisbursementResponse::fromArray($this->client->json($response));
     }
 
     /**
@@ -78,13 +79,13 @@ class Finance
 
         $endpoint = '/webapi/api/disbursement/checkbalance';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest(retryable: true)->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        return DisbursementResponse::fromArray($response->json());
+        return DisbursementResponse::fromArray($this->client->json($response));
     }
 
     /**
@@ -114,18 +115,18 @@ class Finance
 
         $endpoint = '/webapi/api/disbursement/listBank';
 
-        $response = $this->client->request()->post($endpoint, $payload);
+        $response = $this->client->disbursementRequest(retryable: true)->post($endpoint, $payload);
 
         if (! $response->successful()) {
             $response->throw();
         }
 
-        $data = $response->json();
+        $data = $this->client->json($response);
 
         if (isset($data['listBank']) && is_array($data['listBank'])) {
             return $data['listBank'];
         }
 
-        return $data;
+        throw new MalformedResponseException('Duitku returned a bank list without listBank.');
     }
 }
