@@ -19,6 +19,7 @@ use Duitku\Laravel\Services\Pop;
 use Duitku\Laravel\Support\DuitkuConfig;
 use Duitku\Laravel\Support\PaymentSigner;
 use Duitku\Laravel\Support\ResponseValidator;
+use Duitku\Laravel\Testing\DuitkuFake;
 use Illuminate\Support\Facades\Validator;
 
 class Duitku
@@ -26,6 +27,8 @@ class Duitku
     private Client $client;
 
     private PaymentSigner $signer;
+
+    private ?DuitkuFake $fakeProvider = null;
 
     public function __construct(private DuitkuConfig $config)
     {
@@ -36,6 +39,11 @@ class Duitku
     public function disbursement(): Disbursement
     {
         return new Disbursement($this->config);
+    }
+
+    public function fake(): DuitkuFake
+    {
+        return $this->fakeProvider ??= (new DuitkuFake($this->config))->register();
     }
 
     public function pop(): Pop

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \Duitku\Laravel\Data\CallbackRequest handleCallback(array $data)
  * @method static \Duitku\Laravel\Services\Pop pop()
  * @method static \Duitku\Laravel\Disbursement disbursement()
+ * @method static \Duitku\Laravel\Testing\DuitkuFake fake()
  *
  * @see \Duitku\Laravel\Duitku
  */

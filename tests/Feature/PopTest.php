@@ -2,6 +2,7 @@
 
 use Duitku\Laravel\Data\PaymentRequest;
 use Duitku\Laravel\Facades\Duitku;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
@@ -71,4 +72,10 @@ test('pop status and payment methods use the documented API V2 endpoints', funct
         'https://sandbox.duitku.com/webapi/api/merchant/transactionStatus' &&
         $request['signature'] === hash_hmac('sha256', 'D1234POP-001', 'test-api-key'));
     Http::assertSentCount(2);
+});
+
+test('pop status preserves a provider lookup error instead of inventing a payment state', function () {
+    Http::fake(['*' => Http::response(['Message' => 'Transaction not found'], 404)]);
+
+    expect(fn () => Duitku::pop()->checkTransaction('POP-NOT-INDEXED'))->toThrow(RequestException::class);
 });

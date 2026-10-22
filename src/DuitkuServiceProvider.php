@@ -3,6 +3,7 @@
 namespace Duitku\Laravel;
 
 use Duitku\Laravel\Components\Pop;
+use Duitku\Laravel\Console\DoctorCommand;
 use Duitku\Laravel\Support\DuitkuConfig;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
@@ -15,6 +16,8 @@ class DuitkuServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
+            $this->commands([DoctorCommand::class]);
+
             $this->publishes([
                 __DIR__.'/../config/duitku.php' => config_path('duitku.php'),
             ], 'duitku-config');

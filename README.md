@@ -203,6 +203,10 @@ Dokumentasi detail tersedia di [VitePress Docs](./docs/guide/introduction.md):
 
 ## 🧪 Testing
 
+Periksa konfigurasi dengan `php artisan duitku:doctor`; tambahkan `--pop`, `--disbursement`, atau `--strict` sesuai kebutuhan. Command tidak menghubungi provider atau menampilkan kredensial.
+
+Untuk test aplikasi, `Duitku::fake()->payment('ORDER-001', 10000, statusCode: '00')` menyediakan respons sintetis sambil mempertahankan validasi dan event SDK. Baca [panduan diagnosis dan fake provider](./docs/guide/testing.md) serta [hasil sandbox](./docs/reviews/2026-10-22-sandbox.md).
+
 ```bash
 # Jalankan semua test
 composer test

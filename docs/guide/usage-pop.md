@@ -55,3 +55,5 @@ Mode 1 meminta token 3DS; mode 2 meminta token untuk kebutuhan recurring sesuai 
 Webhook POP menggunakan [pipeline callback](./callback-system) yang sama. Event sukses browser tidak membuktikan pembayaran sudah diterima server.
 
 `pop()->checkTransaction($orderId)` mendelegasikan ke status API V2. `pop()->getPaymentMethod($amount)` juga memakai daftar metode API V2 yang terdokumentasi. Header autentikasi POP digunakan untuk create invoice; kedua operasi tersebut tidak menebak endpoint POP tambahan.
+
+Pada [pengujian sandbox](../reviews/2026-10-22-sandbox), invoice POP baru tanpa pilihan channel belum ditemukan lewat lookup V2 (HTTP 404). Penyebabnya belum diisolasi. Method ini meneruskan error provider; jangan menganggap invoice POP baru pasti langsung dapat dibaca, atau mengubah 404 menjadi status pembayaran final.
