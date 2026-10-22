@@ -182,12 +182,12 @@ foreach ($methods as $method) {
 ### Popup tidak muncul
 
 - **Penyebab:** Script JS Duitku tidak ter-load
-- **Solusi:** Pastikan `<script src="{{ Duitku::pop()->scriptUrl() }}">` ada di halaman, dan tidak ada error di browser console
+- **Solusi:** Pastikan JavaScript Duitku POP sudah dimuat sebelum pemanggilan `checkout`, lalu cek error di browser console.
 
 ### Error "checkout is not defined"
 
 - **Penyebab:** Script belum selesai loading saat function dipanggil
-- **Solusi:** Taruh `<script>` di bawah (sebelum `</body>`), atau gunakan `DOMContentLoaded` event
+- **Solusi:** Muat script di bagian bawah halaman sebelum tag penutup body, atau jalankan kode setelah event `DOMContentLoaded`.
 
 ### Error "Invalid reference"
 
