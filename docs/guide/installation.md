@@ -24,7 +24,7 @@ Sebelum mulai, pastikan project kamu memenuhi syarat berikut:
 Buka terminal di folder root project Laravel kamu, lalu jalankan:
 
 ```bash
-composer require duitku/laravel
+composer require duitku/laravel:^3.0
 ```
 
 **Apa yang terjadi?**

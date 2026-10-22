@@ -1,6 +1,15 @@
-# Migrasi ke rilis major berikutnya
+# Migrasi ke v3.0
 
-Branch ini menargetkan Laravel 12–13. Laravel 12 membutuhkan PHP 8.2+, sedangkan Laravel 13 membutuhkan PHP 8.3+. Perubahan signature, validasi, dan hasil batch bersifat breaking; jangan menerbitkannya sebagai patch instalasi lama.
+Seri v3 menargetkan Laravel 12–13. Laravel 12 membutuhkan PHP 8.2+, sedangkan Laravel 13 membutuhkan PHP 8.3+. Perubahan signature, validasi, dan hasil batch bersifat breaking dari v2.
+
+```sh
+composer require duitku/laravel:^3.0 --with-all-dependencies
+php artisan vendor:publish --tag=duitku-assets --force
+php artisan optimize:clear
+php artisan duitku:doctor --strict
+```
+
+Publish asset hanya diperlukan untuk Blade POP. Jika konfigurasi pernah dipublish, gabungkan opsi baru ke file milik aplikasi; jangan menimpa penyesuaian aplikasi secara otomatis. Uji transaksi sandbox setelah migrasi.
 
 ## Signature dan callback
 

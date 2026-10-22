@@ -7,7 +7,7 @@
 
 SDK komunitas untuk mengintegrasikan [Duitku Payment Gateway](https://www.duitku.com/) dengan Laravel 12–13.
 
-> Branch ini menyiapkan rilis major berikutnya. Baca [panduan migrasi](docs/guide/upgrading.md) sebelum memperbarui instalasi lama: signature default sekarang HMAC-SHA256, callback memverifikasi status provider, dan hasil batch memakai `BatchResult`.
+> Seri v3 membawa perubahan breaking. Baca [panduan migrasi](docs/guide/upgrading.md) dan [changelog](CHANGELOG.md) sebelum memperbarui instalasi lama: signature default sekarang HMAC-SHA256, callback memverifikasi status provider, dan hasil batch memakai `BatchResult`.
 
 > **Apa itu SDK ini?**
 > SDK ini adalah "jembatan" antara aplikasi Laravel kamu dan Duitku. Tanpa SDK ini, kamu harus menulis kode HTTP request manual, menghitung signature sendiri, dan mengurus banyak hal teknis. Dengan SDK ini, semua itu sudah diurus — kamu tinggal panggil method-nya saja.
@@ -34,7 +34,7 @@ SDK komunitas untuk mengintegrasikan [Duitku Payment Gateway](https://www.duitku
 ### Langkah 1: Install
 
 ```bash
-composer require duitku/laravel
+composer require duitku/laravel:^3.0
 ```
 
 ### Langkah 2: Publish Config

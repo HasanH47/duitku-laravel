@@ -56,4 +56,4 @@ Webhook POP menggunakan [pipeline callback](./callback-system) yang sama. Event 
 
 `pop()->checkTransaction($orderId)` mendelegasikan ke status API V2. `pop()->getPaymentMethod($amount)` juga memakai daftar metode API V2 yang terdokumentasi. Header autentikasi POP digunakan untuk create invoice; kedua operasi tersebut tidak menebak endpoint POP tambahan.
 
-Pada [pengujian sandbox](../reviews/2026-10-22-sandbox), invoice POP baru tanpa pilihan channel belum ditemukan lewat lookup V2 (HTTP 404). Penyebabnya belum diisolasi. Method ini meneruskan error provider; jangan menganggap invoice POP baru pasti langsung dapat dibaca, atau mengubah 404 menjadi status pembayaran final.
+Pada [pengujian sandbox BCA VA](../reviews/2026-10-22-sandbox), lookup V2 mengembalikan HTTP 404 sebelum nomor VA diterbitkan. Setelah pelanggan memilih BCA VA dan menekan tombol konfirmasi pembayaran di POP, lookup berhasil dengan status pending dan reference yang sesuai. Jangan menganggap invoice POP baru pasti langsung dapat dibaca, atau mengubah 404 menjadi status pembayaran final. Lifecycle channel lain perlu diuji sesuai integrasi merchant.
